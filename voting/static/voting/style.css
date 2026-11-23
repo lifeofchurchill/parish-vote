@@ -1,18 +1,58 @@
-/* ===== Base: large, high-contrast text that stays readable in bright sun ===== */
+/* =====================================================================
+   Parish election check-in - styles
+   Deep violet, candle gold and a Gothic rose window. Everything is sized
+   for phones used outdoors: large text, big tap targets, strong contrast.
+   ===================================================================== */
+
+/* ===== Design tokens: change a colour or font here and it changes everywhere ===== */
+:root {
+  --violet-950: #1B0D24;   /* deepest violet: shadows */
+  --violet-900: #24112F;   /* sign-in panel, top bar, main text */
+  --violet-700: #4B2768;   /* main buttons */
+  --violet-100: #EFE8F5;   /* light violet tint */
+  --stone:      #F7F4FA;   /* page background, a cool lilac-white */
+  --candle:     #E9A93B;   /* candle gold: focus ring, small accents */
+  --candle-light: #F5D99A; /* candle gold for text on violet */
+  --rose:       #C8577E;   /* stained-glass rose */
+  --glass-blue: #4F7BD9;   /* stained-glass blue */
+  --tracery:    #CDB2EA;   /* rose window lines */
+  --muted:      #5E5468;   /* secondary text */
+  --line:       #9C90A8;   /* input borders */
+  --green:      #146C2E;   /* "Ticked" / success */
+  --red:        #B3261E;   /* "Voted" / stop */
+
+  --font-display: "Gloock", Georgia, "Times New Roman", serif;
+  --font-body: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Fine film grain so the violet doesn't look flat (a tiny generated SVG, no image file) */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .09 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== Base ===== */
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-body);
   font-size: 18px;
   line-height: 1.5;
-  color: #111;
-  background: #f4f4f1;
+  color: var(--violet-900);
+  background: var(--stone);
 }
 
-h1 { font-size: 24px; margin: 0 0 12px; }
-h2 { font-size: 20px; margin: 0; }
-.muted { color: #555; }
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 400;           /* Gloock has one weight, and it's already bold */
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--violet-900);
+  text-wrap: balance;         /* even line lengths: no lonely last word */
+}
+/* Avoids a single word stranded on the last line of a paragraph */
+p { text-wrap: pretty; }
+h1 { font-size: 30px; margin: 0 0 12px; }
+h2 { font-size: 24px; margin: 0; }
+.muted { color: var(--muted); }
 
 /* Hidden visually but still read by screen readers */
 .sr-only {
@@ -20,9 +60,12 @@ h2 { font-size: 20px; margin: 0; }
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
 
-/* ===== Top bar ===== */
+/* Visible keyboard focus everywhere, in candle gold */
+:focus-visible { outline: 3px solid var(--candle); outline-offset: 2px; }
+
+/* ===== Top bar (signed-in pages) ===== */
 .topbar {
-  background: #1f3a5f;
+  background: var(--grain), var(--violet-900);
   color: #fff;
   padding: 12px 16px;
   display: flex;
@@ -30,65 +73,372 @@ h2 { font-size: 20px; margin: 0; }
   justify-content: space-between;
   align-items: center;
   gap: 8px;
+  border-bottom: 3px solid var(--candle);
 }
-.topbar-title { font-weight: 700; }
+.topbar-title { font-family: var(--font-display); font-size: 20px; }
 .topbar-user { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 15px; }
-.topbar-centre { background: rgba(255, 255, 255, 0.15); padding: 2px 8px; border-radius: 4px; }
+.topbar-centre { background: rgba(255, 255, 255, 0.14); padding: 2px 8px; border-radius: 4px; }
 
 /* ===== Layout ===== */
 .container { max-width: 640px; margin: 0 auto; padding: 16px; }
-.card { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 20px; }
+.card { background: #fff; border: 1px solid #DDD6E3; border-radius: 14px; padding: 20px; }
 .inline { display: inline; }
 
 /* ===== Forms ===== */
-label { display: block; font-weight: 600; margin: 12px 0 4px; }
+label { display: block; font-size: 16px; font-weight: 700; margin: 0 0 6px; }
 
 input[type="text"],
 input[type="password"],
 input[type="search"] {
   width: 100%;
-  font-size: 18px;
-  padding: 14px;
-  border: 2px solid #888;
-  border-radius: 8px;
+  min-height: 58px;
+  font: inherit;
+  padding: 12px 16px;
+  color: var(--violet-900);
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-input:focus { outline: 3px solid #f2b705; border-color: #1f3a5f; }
+/* Inputs get a soft gold ring instead of the outline */
+input:focus-visible { outline: none; }
+input:focus { border-color: var(--violet-700); box-shadow: 0 0 0 4px rgba(233, 169, 59, 0.4); }
 
 /* ===== Buttons: big enough to tap quickly in a crowd ===== */
 .btn {
   display: inline-block;
-  min-height: 52px;
+  min-height: 58px;
   padding: 14px 18px;
-  font-size: 18px;
+  font: inherit;
   font-weight: 700;
   text-align: center;
   text-decoration: none;
-  color: #1f3a5f;
+  color: var(--violet-700);
   background: #fff;
-  border: 2px solid #1f3a5f;
-  border-radius: 8px;
+  border: 2px solid var(--violet-700);
+  border-radius: 12px;
   cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
 }
-.btn-primary { background: #1f3a5f; color: #fff; }
-.btn-tick { background: #146c2e; border-color: #146c2e; color: #fff; }
+.btn:active { transform: translateY(1px); }   /* a small press, so a tap feels registered */
+.btn-primary {
+  color: #fff;
+  background: var(--violet-700);
+  /* A thin highlight on top and a violet shadow below make it look pressable */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 8px 18px -10px rgba(36, 17, 47, 0.7);
+}
+.btn-primary:hover { background: var(--violet-900); border-color: var(--violet-900); }
+.btn-tick { background: var(--green); border-color: var(--green); color: #fff; }
 .btn-block { display: block; width: 100%; margin-top: 12px; }
+.btn:disabled { opacity: 0.7; cursor: progress; }
 
-/* A button that looks like a link (used for Log out and Change) */
+/* A button that looks like a link (used for Sign out and Change) */
 .link-button {
   background: none; border: none; padding: 0;
-  color: inherit; font-size: inherit;
+  color: inherit; font: inherit;
   text-decoration: underline; cursor: pointer;
 }
 
 /* ===== Messages ===== */
-.alert { padding: 14px 16px; margin-bottom: 16px; font-weight: 600; border: 2px solid; border-radius: 8px; }
-.alert-success { background: #e3f4e8; border-color: #146c2e; color: #0b3d1a; }
-.alert-error { background: #fde8e8; border-color: #b3261e; color: #5c0f0b; }
+.alert { padding: 14px 16px; margin-bottom: 16px; font-weight: 700; border: 2px solid; border-radius: 12px; }
+.alert-success { background: #E3F4E8; border-color: var(--green); color: #0B3D1A; }
+.alert-error { background: #FDE8E8; border-color: var(--red); color: #5C0F0B; }
 
-/* ===== Check-in page (Steps 8-10) ===== */
+/* =====================================================================
+   Sign-in page
+   Phones: parish panel on top, form below.
+   Laptops: parish panel on the left, form on the right.
+   ===================================================================== */
+.login {
+  min-height: 100vh;
+  min-height: 100dvh;   /* phones: ignore the browser's address bar height */
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: clip;       /* trims the decorative rose windows at the page edges (no sideways scrolling) */
+}
+
+/* --- Parish panel --- */
+.login-hero {
+  position: relative;
+  isolation: isolate;               /* keeps all the layers inside this box */
+  overflow: hidden;
+  min-height: 58vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 28px 24px 68px;          /* extra space at the bottom: the sign-in card overlaps it */
+  color: #fff;
+  background:
+    /* warm candlelight coming through the rose window */
+    radial-gradient(ellipse 70% 55% at 82% 16%, rgba(233, 169, 59, 0.22), transparent 65%),
+    /* a darker corner behind the title, so it always reads clearly */
+    radial-gradient(ellipse 95% 70% at 0% 100%, rgba(12, 4, 18, 0.75), transparent 70%),
+    var(--grain),
+    var(--violet-900);
+}
+
+/* Church photo (when the church provides one): black and white... */
+.login-hero-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.05);
+  z-index: -2;
+}
+/* ...tinted violet... */
+.login-hero:has(.login-hero-photo)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #6A3D8F;
+  mix-blend-mode: multiply;
+  z-index: -1;
+}
+/* ...and darker at the bottom, so the white title is always readable */
+.login-hero:has(.login-hero-photo)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(36, 17, 47, 0.94), rgba(36, 17, 47, 0.2) 70%);
+  z-index: -1;
+}
+
+/* --- The rose window (templates/voting/rose_window.svg) --- */
+.rose-window {
+  position: absolute;
+  z-index: 0;
+  width: 135%;
+  max-width: 1000px;
+  aspect-ratio: 1;
+  top: -26%;
+  right: -48%;
+  pointer-events: none;
+  /* Fade the window out towards the bottom-left, so no line runs through the text */
+  -webkit-mask-image: linear-gradient(200deg, #000 38%, transparent 72%);
+          mask-image: linear-gradient(200deg, #000 38%, transparent 72%);
+}
+.rose-window .rw {
+  fill: none;
+  stroke: var(--tracery);
+  stroke-width: 2.4;
+  stroke-opacity: 0.5;
+}
+.rose-window .rw-a { stroke-opacity: 0.75; }
+/* A few panes "lit", like light through stained glass */
+.rose-window .glass-rose   { --glass: 0.24; fill: var(--rose); }
+.rose-window .glass-gold   { --glass: 0.26; fill: var(--glass-blue); }   /* deep blue reads as glass; gold turned brown on violet */
+.rose-window .glass-lilac  { --glass: 0.22; fill: #9B6FC7; }
+.rose-window .glass-centre { --glass: 0.55; fill: var(--candle); }
+.rose-window [class*="glass-"] { fill-opacity: var(--glass); }
+/* With a photo behind it, the window steps back a little */
+.login-hero:has(.login-hero-photo) .rose-window { opacity: 0.55; }
+
+/* The one animation on the page: the window draws itself from the outside in,
+   then the glass lights up. Skipped for people who turn off motion on their phone. */
+@media (prefers-reduced-motion: no-preference) {
+  .rose-window .rw {
+    stroke-dasharray: 1;          /* each shape has pathLength="1" in the SVG */
+    stroke-dashoffset: 1;
+    animation: rw-draw 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  .rose-window .rw-b { animation-delay: 0.15s; }
+  .rose-window .rw-c { animation-delay: 0.3s; }
+  .rose-window .rw-d { animation-delay: 0.45s; }
+  .rose-window .rw-e { animation-delay: 0.6s; }
+  .rose-window .rw-f { animation-delay: 0.75s; }
+  .rose-window .rw-d[class*="glass-"] {
+    animation: rw-draw 1.6s cubic-bezier(0.4, 0, 0.2, 1) 0.45s forwards, rw-light 1s ease-out 1.6s both;
+  }
+  .rose-window .rw-f[class*="glass-"] {
+    animation: rw-draw 1.6s cubic-bezier(0.4, 0, 0.2, 1) 0.75s forwards, rw-light 1s ease-out 1.9s both;
+  }
+}
+@keyframes rw-draw  { to { stroke-dashoffset: 0; } }
+@keyframes rw-light { from { fill-opacity: 0; } to { fill-opacity: var(--glass); } }
+
+/* --- Text on the parish panel --- */
+.login-hero-text { position: relative; z-index: 1; }
+
+/* Logo on a white disc with a thin gold ring, so any logo colours read clearly */
+.login-logo {
+  display: block;
+  width: 14px;
+  height: 104px;
+  padding: 4px;
+  margin-bottom: 22px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(233, 169, 59, 0.65);
+}
+.login-parish {
+  margin: 0 0 12px;
+  max-width: 32ch;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.86);
+  text-wrap: balance;
+}
+.login-title {
+  margin: 0 0 20px;
+  font-size: clamp(42px, 10.5vw, 86px);
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+  color: #FFF6E6;               /* warm white, like candlelit paper */
+  text-wrap: balance;
+}
+/* Date, led by a short gold line */
+.login-date {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--candle-light);
+  text-wrap: balance;
+}
+.login-date::before {
+  content: "";
+  flex: none;
+  width: 32px;
+  height: 2px;
+  margin-top: 0.75em;     /* lines up with the first line of the date, even when it wraps */
+  background: var(--candle);
+}
+
+/* --- Sign-in side --- */
+.login-panel {
+  position: relative;
+  z-index: 2;                 /* above the violet panel, where the card overlaps it */
+  margin-top: -40px;          /* phones: the card slides up over the bottom of the violet panel */
+  padding: 0 12px 32px;
+}
+
+/* The sign-in card: rounded, lifted, and overlapping the violet panel */
+.login-card {
+  position: relative;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 30px 22px 24px;
+  background: #fff;
+  border-radius: 26px;
+  box-shadow: 0 28px 56px -28px rgba(36, 17, 47, 0.5), 0 2px 6px rgba(36, 17, 47, 0.06);
+}
+.login-card h2 { font-size: 26px; margin-bottom: 4px; }
+.login-intro { margin: 0 0 24px; color: var(--muted); }
+.field { margin-bottom: 18px; }
+
+/* Inputs with a small icon on the left.
+   ">" means direct children only, so the eye icon inside the button isn't affected. */
+.input-icon { position: relative; }
+.input-icon > svg {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;       /* taps go straight through to the input */
+  transition: stroke 0.15s;
+}
+.input-icon input { padding-left: 48px; background: #FBF9FD; border-width: 1.5px; border-radius: 14px; }
+.input-icon input:focus { background: #fff; }
+.input-icon:focus-within > svg { stroke: var(--violet-700); }   /* icon turns violet while typing */
+
+/* Password box with the eye button inside it */
+.password-wrap input { padding-right: 64px; }
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;        /* centres the eye icon */
+  width: 44px;
+  height: 44px;               /* a comfortable square to tap */
+  padding: 0;
+  color: var(--violet-700);   /* the eye is drawn in this colour */
+  background: var(--violet-100);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.toggle-password:hover { background: #E2D6EE; }
+
+.login-help {
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid #EEE8F3;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+/* A faint second rose window behind the card (laptops only), tying both sides together */
+.login-watermark { display: none; }
+.login-watermark .rose-window {
+  top: auto;
+  right: auto;
+  left: 30%;
+  bottom: -38%;
+  width: 95%;
+  max-width: 780px;
+  opacity: 0.07;
+  -webkit-mask-image: none;
+          mask-image: none;
+}
+.login-watermark .rose-window .rw,
+.login-watermark .rose-window .rw[class*="glass-"] {
+  stroke: var(--violet-700);
+  stroke-opacity: 1;
+  fill: none;
+  animation: none;            /* only the main window animates */
+  stroke-dashoffset: 0;
+}
+
+/* Laptops and tablets on their side: parish panel left, card overlapping on the right */
+@media (min-width: 900px) {
+  .login {
+    grid-template-rows: none;
+    grid-template-columns: minmax(0, 1.25fr) minmax(480px, 1fr);
+  }
+  .login-hero { min-height: 100vh; min-height: 100dvh; padding: 56px 170px 56px 64px; }
+  .rose-window { width: 120%; top: -22%; right: -40%; }
+  .login-logo { width: 132px; height: 132px; margin-bottom: 28px; }
+  .login-parish { font-size: 18px; }
+  .login-date { font-size: 19px; }
+  .login-panel {
+    display: flex;
+    align-items: center;
+    margin-top: 0;
+    padding: 48px 56px 48px 0;
+    background: radial-gradient(circle at 85% 8%, rgba(233, 169, 59, 0.10), transparent 45%), var(--stone);
+  }
+  .login-watermark { display: block; }
+  /* The card reaches 100px into the violet panel, breaking the straight split */
+  .login-card {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 0 0 -100px;
+    padding: 48px 44px 36px;
+    border-radius: 30px;
+  }
+  .login-card h2 { font-size: 34px; }
+}
+
+/* =====================================================================
+   Check-in pages (Steps 9-11)
+   ===================================================================== */
 .session-bar {
   display: flex; justify-content: space-between; align-items: center;
-  background: #fff; border: 1px solid #ddd; border-radius: 8px;
+  background: #fff; border: 1px solid #DDD6E3; border-radius: 12px;
   padding: 10px 14px; margin-bottom: 12px;
 }
 
@@ -97,25 +447,27 @@ input:focus { outline: 3px solid #f2b705; border-color: #1f3a5f; }
 
 .member-card {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px;
-  background: #fff; border: 2px solid #ddd; border-radius: 12px;
+  background: #fff; border: 2px solid #DDD6E3; border-radius: 14px;
   padding: 14px; margin-bottom: 10px;
 }
+/* Names use the reading font, not the display font: they must be read fast */
+.member-card h2 { font-family: var(--font-body); font-weight: 700; font-size: 20px; letter-spacing: 0; }
 /* Voted members get a red border so they stand out immediately */
-.member-card.is-voted { border-color: #b3261e; background: #fff7f7; }
+.member-card.is-voted { border-color: var(--red); background: #FFF7F7; }
 .member-info p { margin: 2px 0; }
 .member-status { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 
-.badge { font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
-.badge-not { background: #e6e6e1; color: #333; }
-.badge-voted { background: #b3261e; color: #fff; }
-.voted-detail { margin: 0; font-size: 15px; text-align: right; color: #5c0f0b; }
+.badge { font-size: 15px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+.badge-not { background: #E8E4EC; color: #3A3142; }
+.badge-voted { background: var(--red); color: #fff; }
+.voted-detail { margin: 0; font-size: 15px; text-align: right; color: #5C0F0B; }
 
-.empty { background: #fff; border: 2px dashed #aaa; border-radius: 12px; padding: 16px; }
-.counter { text-align: center; margin-top: 20px; color: #333; }
+.empty { background: #fff; border: 2px dashed var(--line); border-radius: 14px; padding: 16px; }
+.counter { text-align: center; margin-top: 20px; color: var(--muted); }
 
-/* ===== Confirm page (Step 10) ===== */
+/* ===== Confirm page ===== */
 .details { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0 0 16px; }
-.details dt { font-weight: 700; color: #555; }
+.details dt { font-weight: 700; color: var(--muted); }
 .details dd { margin: 0; }
 
 /* ===== Small phones: stack the status under the name ===== */

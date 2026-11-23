@@ -1,29 +1,123 @@
 {% extends "base.html" %}
-{% block title %}Log in{% endblock %}
+{% load static %}
+{% block title %}Sign in{% endblock %}
 
-{% block content %}
-<section class="card">
-  <h1>Organizer log in</h1>
+{% block page %}
+<div class="login">
 
-  {# Django's LoginView puts errors in form.errors when the details are wrong #}
-  {% if form.errors %}
-    <div class="alert alert-error">Wrong username or password. Try again.</div>
-  {% endif %}
+  {# Parish side: violet, with a rose window that draws itself in when the page opens #}
+  <header class="login-hero">
+    {# Decorative photo (empty alt). If the file is missing, it removes itself and the violet stays. #}
+    <img class="login-hero-photo" src="{% static 'voting/img/church.jpg' %}" alt="" onerror="this.remove()">
+    {% include "voting/rose_window.svg" %}
 
-  <form method="post">
-    {% csrf_token %}
-    <label for="id_username">Username</label>
-    {# autocapitalize="none" stops phones capitalising the first letter #}
-    <input type="text" name="username" id="id_username"
-           autocomplete="username" autocapitalize="none" required autofocus>
+    <div class="login-hero-text">
+      <img class="login-logo" src="{% static 'voting/img/Logo.jpeg' %}" alt="" onerror="this.remove()">
+      <p class="login-parish">Ss. Thomas More &amp; John Fisher Catholic Parish</p>
 
-    <label for="id_password">Password</label>
-    <input type="password" name="password" id="id_password"
-           autocomplete="current-password" required>
+      {% if election %}
+        {# Everything here comes from the active election in the admin #}
+        <h1 class="login-title">{{ election.name }}</h1>
+        <p class="login-date">
+          {{ election.date|date:"l j F Y" }}{% if election.date_note %}, {{ election.date_note }}{% endif %}
+        </p>
+      {% else %}
+        <h1 class="login-title">Parish elections</h1>
+        <p class="login-date">No election is open at the moment.</p>
+      {% endif %}
+    </div>
+  </header>
 
-    {# Sends the organizer back to the page they wanted after logging in #}
-    <input type="hidden" name="next" value="{{ next }}">
-    <button type="submit" class="btn btn-primary btn-block">Log in</button>
-  </form>
-</section>
-{% endblock %}
+  {# Sign-in side: a card that overlaps the violet panel, with a faint rose window behind it #}
+  <main class="login-panel">
+    {# A faint second rose window behind the card (laptops only) #}
+    <div class="login-watermark">{% include "voting/rose_window.svg" %}</div>
+
+    <form method="post" class="login-card" id="login-form">
+      {% csrf_token %}
+
+      {# Greeting by time of day (Ghana time), e.g. "Good morning" on election Sunday #}
+      {% now "G" as hour %}
+      <h2>
+        {% if hour|add:0 < 12 %}Good morning{% elif hour|add:0 < 17 %}Good afternoon{% else %}Good evening{% endif %}
+      </h2>
+      <p class="login-intro">Sign in to the voter register.</p>
+
+      {# Django's LoginView fills form.errors when the details don't match #}
+      {% if form.errors %}
+        <div class="alert alert-error" role="alert">
+          That username and password don't match. Check both and try again.
+        </div>
+      {% endif %}
+
+      <div class="field">
+        <label for="id_username">Username</label>
+        <div class="input-icon">
+          {# Small person icon inside the box (decorative) #}
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+          {# Keeps the typed username after a failed attempt, so only the password needs retyping #}
+          <input type="text" name="username" id="id_username"
+                 value="{{ form.username.value|default:'' }}"
+                 autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="id_password">Password</label>
+        <div class="input-icon password-wrap">
+          {# Small padlock icon inside the box (decorative) #}
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          <input type="password" name="password" id="id_password"
+                 autocomplete="current-password" required>
+          {# Eye icon button. type="button" so tapping it never submits the form. #}
+          {# The aria-label is what screen readers say, since there's no visible word. #}
+          <button type="button" class="toggle-password" id="toggle-password"
+                  aria-controls="id_password" aria-label="Show password" aria-pressed="false">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"
+                 fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/>
+              <circle cx="12" cy="12" r="3"/>
+              {# The slash: hidden at first, shown while the password is visible #}
+              <line id="eye-slash" x1="4" y1="20" x2="20" y2="4" style="display:none"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {# Sends the official back to the page they wanted after signing in #}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit" class="btn btn-primary btn-block" id="login-submit">Sign in</button>
+
+      <p class="login-help">Can't sign in? Ask the Electoral Commissioner to check your account.</p>
+    </form>
+  </main>
+
+</div>
+
+<script>
+  // Show/hide password: easier to check what you typed on a small phone keyboard.
+  // Eye = tap to show. Eye with a slash = tap to hide again.
+  const toggle = document.getElementById("toggle-password");
+  const password = document.getElementById("id_password");
+  const slash = document.getElementById("eye-slash");
+  toggle.addEventListener("click", () => {
+    const showing = password.type === "text";      // true if the password is visible right now
+    password.type = showing ? "password" : "text";
+    slash.style.display = showing ? "none" : "";   // slash appears while the password is visible
+    toggle.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+    toggle.setAttribute("aria-pressed", String(!showing));
+  });
+
+  // On slow mobile data people tap twice. Disable the button once the form is sent.
+  const submit = document.getElementById("login-submit");
+  document.getElementById("login-form").addEventListener("submit", () => {
+    submit.disabled = true;
+    submit.textContent = "Signing in…";
+  });
+  // If they come back with the browser's Back button, make the button usable again
+  window.addEventListener("pageshow", () => {
+    submit.disabled = false;
+    submit.textContent = "Sign in";
+  });
+</script>
+{% endblock page %}

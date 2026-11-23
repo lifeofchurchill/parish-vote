@@ -1,0 +1,105 @@
+{# Rose window line art, drawn in by CSS on page load. Generated geometry: 12 petals, one per apostle. #}
+<svg class="rose-window" viewBox="-500 -500 1000 1000" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="0.0" cy="0.0" r="492.0" pathLength="1" class="rw rw-a"/>
+  <circle cx="0.0" cy="0.0" r="470.0" pathLength="1" class="rw rw-a"/>
+  <circle cx="0.0" cy="-438.0" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="113.4" cy="-423.1" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="219.0" cy="-379.3" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="309.7" cy="-309.7" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="379.3" cy="-219.0" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="423.1" cy="-113.4" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="438.0" cy="0.0" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="423.1" cy="113.4" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="379.3" cy="219.0" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="309.7" cy="309.7" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="219.0" cy="379.3" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="113.4" cy="423.1" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="0.0" cy="438.0" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-113.4" cy="423.1" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-219.0" cy="379.3" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-309.7" cy="309.7" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-379.3" cy="219.0" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-423.1" cy="113.4" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-438.0" cy="0.0" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-423.1" cy="-113.4" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-379.3" cy="-219.0" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-309.7" cy="-309.7" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-219.0" cy="-379.3" r="30.0" pathLength="1" class="rw rw-b"/>
+  <circle cx="-113.4" cy="-423.1" r="30.0" pathLength="1" class="rw rw-b"/>
+  <line x1="0.0" y1="-172.0" x2="0.0" y2="-404.0" pathLength="1" class="rw rw-c"/>
+  <line x1="86.0" y1="-149.0" x2="202.0" y2="-349.9" pathLength="1" class="rw rw-c"/>
+  <line x1="149.0" y1="-86.0" x2="349.9" y2="-202.0" pathLength="1" class="rw rw-c"/>
+  <line x1="172.0" y1="0.0" x2="404.0" y2="0.0" pathLength="1" class="rw rw-c"/>
+  <line x1="149.0" y1="86.0" x2="349.9" y2="202.0" pathLength="1" class="rw rw-c"/>
+  <line x1="86.0" y1="149.0" x2="202.0" y2="349.9" pathLength="1" class="rw rw-c"/>
+  <line x1="0.0" y1="172.0" x2="0.0" y2="404.0" pathLength="1" class="rw rw-c"/>
+  <line x1="-86.0" y1="149.0" x2="-202.0" y2="349.9" pathLength="1" class="rw rw-c"/>
+  <line x1="-149.0" y1="86.0" x2="-349.9" y2="202.0" pathLength="1" class="rw rw-c"/>
+  <line x1="-172.0" y1="0.0" x2="-404.0" y2="0.0" pathLength="1" class="rw rw-c"/>
+  <line x1="-149.0" y1="-86.0" x2="-349.9" y2="-202.0" pathLength="1" class="rw rw-c"/>
+  <line x1="-86.0" y1="-149.0" x2="-202.0" y2="-349.9" pathLength="1" class="rw rw-c"/>
+  <circle cx="0.0" cy="0.0" r="404.0" pathLength="1" class="rw rw-c"/>
+  <circle cx="75.1" cy="-280.1" r="92.0" pathLength="1" class="rw rw-d glass-rose"/>
+  <circle cx="82.8" cy="-309.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="96.3" cy="-258.9" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="46.1" cy="-272.4" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="205.1" cy="-205.1" r="92.0" pathLength="1" class="rw rw-d glass-gold"/>
+  <circle cx="226.3" cy="-226.3" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="212.8" cy="-176.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="176.1" cy="-212.8" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="280.1" cy="-75.1" r="92.0" pathLength="1" class="rw rw-d glass-lilac"/>
+  <circle cx="309.1" cy="-82.8" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="272.4" cy="-46.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="258.9" cy="-96.3" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="280.1" cy="75.1" r="92.0" pathLength="1" class="rw rw-d glass-rose"/>
+  <circle cx="309.1" cy="82.8" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="258.9" cy="96.3" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="272.4" cy="46.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="205.1" cy="205.1" r="92.0" pathLength="1" class="rw rw-d glass-gold"/>
+  <circle cx="226.3" cy="226.3" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="176.1" cy="212.8" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="212.8" cy="176.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="75.1" cy="280.1" r="92.0" pathLength="1" class="rw rw-d glass-lilac"/>
+  <circle cx="82.8" cy="309.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="46.1" cy="272.4" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="96.3" cy="258.9" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-75.1" cy="280.1" r="92.0" pathLength="1" class="rw rw-d glass-rose"/>
+  <circle cx="-82.8" cy="309.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-96.3" cy="258.9" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-46.1" cy="272.4" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-205.1" cy="205.1" r="92.0" pathLength="1" class="rw rw-d glass-gold"/>
+  <circle cx="-226.3" cy="226.3" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-212.8" cy="176.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-176.1" cy="212.8" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-280.1" cy="75.1" r="92.0" pathLength="1" class="rw rw-d glass-lilac"/>
+  <circle cx="-309.1" cy="82.8" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-272.4" cy="46.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-258.9" cy="96.3" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-280.1" cy="-75.1" r="92.0" pathLength="1" class="rw rw-d glass-rose"/>
+  <circle cx="-309.1" cy="-82.8" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-258.9" cy="-96.3" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-272.4" cy="-46.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-205.1" cy="-205.1" r="92.0" pathLength="1" class="rw rw-d glass-gold"/>
+  <circle cx="-226.3" cy="-226.3" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-176.1" cy="-212.8" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-212.8" cy="-176.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-75.1" cy="-280.1" r="92.0" pathLength="1" class="rw rw-d glass-lilac"/>
+  <circle cx="-82.8" cy="-309.1" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-46.1" cy="-272.4" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="-96.3" cy="-258.9" r="26.0" pathLength="1" class="rw rw-d"/>
+  <circle cx="0.0" cy="0.0" r="172.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="0.0" cy="0.0" r="150.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="0.0" cy="-100.0" r="38.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="70.7" cy="-70.7" r="38.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="100.0" cy="0.0" r="38.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="70.7" cy="70.7" r="38.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="0.0" cy="100.0" r="38.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="-70.7" cy="70.7" r="38.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="-100.0" cy="0.0" r="38.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="-70.7" cy="-70.7" r="38.0" pathLength="1" class="rw rw-e"/>
+  <circle cx="0.0" cy="0.0" r="58.0" pathLength="1" class="rw rw-f glass-centre"/>
+  <circle cx="0.0" cy="-24.0" r="24.0" pathLength="1" class="rw rw-f"/>
+  <circle cx="24.0" cy="0.0" r="24.0" pathLength="1" class="rw rw-f"/>
+  <circle cx="0.0" cy="24.0" r="24.0" pathLength="1" class="rw rw-f"/>
+  <circle cx="-24.0" cy="0.0" r="24.0" pathLength="1" class="rw rw-f"/>
+</svg>

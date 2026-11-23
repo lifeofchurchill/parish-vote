@@ -5,33 +5,45 @@
   <meta charset="utf-8">
   {# Makes the page fit phone screens properly #}
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Check-in{% endblock %} · Youth Council Election 2026</title>
+  {# Colours the phone's browser bar violet to match the page #}
+  <meta name="theme-color" content="#24112F">
+  <title>{% block title %}Check-in{% endblock %} | {{ election.name|default:"Parish elections" }}</title>
+
+  {# Fonts: Gloock (bold display serif for titles) and Bricolage Grotesque (everything else). #}
+  {# If the fonts can't load, the page falls back to the phone's own fonts and still works. #}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Gloock&display=swap">
+
   <link rel="stylesheet" href="{% static 'voting/style.css' %}">
 </head>
 <body>
-  {# Top bar: election name, and for logged-in organizers their centre, name and logout #}
-  <header class="topbar">
-    <div class="topbar-title">Youth Council Election 2026</div>
-    {% if user.is_authenticated %}
-      <div class="topbar-user">
-        {% if centre_label %}<span class="topbar-centre">{{ centre_label }}</span>{% endif %}
-        <span>{{ user.get_full_name|default:user.username }}</span>
-        {# Logout must be a POST form in current Django versions #}
-        <form method="post" action="{% url 'logout' %}" class="inline">
-          {% csrf_token %}
-          <button type="submit" class="link-button">Log out</button>
-        </form>
-      </div>
-    {% endif %}
-  </header>
+  {# Pages like sign-in replace this whole block with their own layout #}
+  {% block page %}
+    {# Top bar: the active election, and for signed-in officials their centre, name and sign-out #}
+    <header class="topbar">
+      <div class="topbar-title">{{ election.name|default:"Parish elections" }}</div>
+      {% if user.is_authenticated %}
+        <div class="topbar-user">
+          {% if centre_label %}<span class="topbar-centre">{{ centre_label }}</span>{% endif %}
+          <span>{{ user.get_full_name|default:user.username }}</span>
+          {# Sign-out must be a POST form in current Django versions #}
+          <form method="post" action="{% url 'logout' %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="link-button">Sign out</button>
+          </form>
+        </div>
+      {% endif %}
+    </header>
 
-  <main class="container">
-    {# Green/red messages, e.g. "Ticked: Ama Mensah" or "STOP: already voted" #}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
-    {% endfor %}
+    <main class="container">
+      {# Green/red messages, e.g. "Ticked: Ama Mensah" or "STOP: already voted" #}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+      {% endfor %}
 
-    {% block content %}{% endblock %}
-  </main>
+      {% block content %}{% endblock %}
+    </main>
+  {% endblock page %}
 </body>
 </html>

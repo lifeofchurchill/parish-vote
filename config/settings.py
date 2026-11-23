@@ -1,12 +1,15 @@
 """
-Settings for the Parish Youth Council election check-in system.
+Settings for the parish election check-in system.
 
 Anything secret or different on the live server (secret key, debug,
 allowed hosts) is read from environment variables, with safe defaults
 for development on your own laptop.
+
+Election details (name, date, age rule, centres, sessions) are NOT here:
+they live in the database and are managed in the admin, so the system
+can be reused for future elections without code changes.
 """
 import os
-from datetime import date
 from pathlib import Path
 
 # Project root folder (the one containing manage.py)
@@ -61,6 +64,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                # Our own: puts {{ election }} (the active election) in every template
+                "voting.context_processors.active_election",
             ],
         },
     },
@@ -99,14 +104,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-# Login: where to send people before and after logging in or out
+# Login: where to send people before and after signing in or out
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "voting:checkin"
 LOGOUT_REDIRECT_URL = "login"
-
-
-# ---- Election rules (from the church's document) ----
-# Age is measured on election day, not on the day someone opens the system
-ELECTION_DATE = date(2026, 11, 29)
-VOTER_MIN_AGE = 13
-VOTER_MAX_AGE = 38
