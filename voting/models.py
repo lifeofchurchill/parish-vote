@@ -1,7 +1,7 @@
 """
 Database tables for the election check-in system.
 
-Member          -> a copy of a person from the church's Excel export
+Member          -> a copy of a person from the church's CSV export
 OrganizerProfile-> links an organizer's login to the centre they work at
 VoteCheckIn     -> proof that a member has voted (one per member, ever)
 """
@@ -60,16 +60,18 @@ class MemberQuerySet(models.QuerySet):
 
 
 class Member(models.Model):
-    # The member's ID in the church software; lets a re-import update instead of duplicate
+    # "id" column in the church export; lets a re-import update instead of duplicate
     church_id = models.CharField(max_length=50, unique=True)
+    # "name" column. Word order varies in the church data, so search matches words in any order
     full_name = models.CharField(max_length=150)
-    # Optional because some church records may be missing it
+    # "birthDate" column. Optional because some church records may be missing it
     date_of_birth = models.DateField(null=True, blank=True)
-    # Stored as digits only, e.g. "0241234567"
-    phone = models.CharField(max_length=20, blank=True)
-    # Empty society = non-aligned youth
-    society = models.CharField(max_length=100, blank=True)
-    parish = models.CharField(max_length=100, blank=True)
+    # First number from the "phone" column, cleaned to digits, e.g. "0271394092"
+    phone = models.CharField(max_length=20, blank=True, default="")
+    # Any extra numbers from the same cell, space-separated. Used only for searching
+    other_phones = models.CharField(max_length=100, blank=True, default="")
+    # "community" column, e.g. "Christian Village". Helps organizers tell people apart
+    community = models.CharField(max_length=100, blank=True, default="")
     # Last time this row was created or updated by an import
     imported_at = models.DateTimeField(auto_now=True)
 
@@ -94,13 +96,13 @@ class Member(models.Model):
         return day.year - dob.year - before_birthday
 
     @property
-    def society_label(self):
-        """What organizers see: the society name, or 'Non-aligned'."""
-        return self.society or "Non-aligned"
+    def community_label(self):
+        """What organizers see: the community name, or a clear 'not listed'."""
+        return self.community or "No community listed"
 
     @property
     def masked_phone(self):
-        """Show only the start and end of the number, e.g. 024•••••67."""
+        """Show only the start and end of the number, e.g. 027•••••92."""
         if len(self.phone) < 6:
             return self.phone
         return self.phone[:3] + "•" * (len(self.phone) - 5) + self.phone[-2:]

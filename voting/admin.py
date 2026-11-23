@@ -9,9 +9,10 @@ from .models import Member, OrganizerProfile, VoteCheckIn
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
     # Columns shown in the member list
-    list_display = ("full_name", "church_id", "date_of_birth", "age", "society", "parish")
-    search_fields = ("full_name", "church_id", "phone")
-    list_filter = ("parish", "society")
+    list_display = ("full_name", "church_id", "date_of_birth", "age", "community")
+    # Search covers every phone number, not just the first one
+    search_fields = ("full_name", "church_id", "phone", "other_phones")
+    list_filter = ("community",)
 
 
 @admin.register(OrganizerProfile)
