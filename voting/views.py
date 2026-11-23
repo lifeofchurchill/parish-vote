@@ -5,11 +5,13 @@ Flow on election day:
   1. The official signs in. Their account is tied to one polling centre.
   2. They choose the session (which Mass they're checking voters in after).
   3. They search for a voter by name or phone.
-  4. They confirm and tick the voter.                 (Step 11)
+  4. They confirm and tick the voter.
 """
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Prefetch, Q
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -23,6 +25,10 @@ SESSION_KEY = "voting_session_id"
 MIN_NAME_LETTERS = 2     # "a" would match half the parish
 MIN_PHONE_DIGITS = 4     # "02" would match almost every number
 MAX_RESULTS = 25         # keeps the page fast on a phone
+
+# If the same official ticks the same person twice within this many seconds,
+# it's a double-tap on a slow connection, not a second vote
+DOUBLE_TAP_SECONDS = 60
 
 
 # ---------- small helpers ----------
@@ -70,6 +76,17 @@ def _initials(name):
         return words[0][0].upper()
     # First letter of the first word + first letter of the last word
     return (words[0][0] + words[-1][0]).upper()
+
+
+def _who(user):
+    """An official's display name: full name if set, otherwise username."""
+    return user.get_full_name() or user.username
+
+
+def _clock(moment):
+    """A stored time shown in Ghana time, e.g. '9:41 a.m.'."""
+    local = timezone.localtime(moment)
+    return local.strftime("%I:%M").lstrip("0") + (" a.m." if local.hour < 12 else " p.m.")
 
 
 def _search(election, query):
@@ -185,3 +202,72 @@ def set_session(request):
         # "Change session" sends an empty value: forget the session and show the picker
         request.session.pop(SESSION_KEY, None)
     return redirect("voting:checkin")
+
+
+@login_required
+def tick(request, member_id):
+    """
+    GET:  the confirm screen ("Is this the person in front of you?").
+    POST: record that the member has voted in the active election.
+    """
+    election = Election.objects.active()
+    profile = _get_profile(request)
+    if election is None or profile is None:
+        # The check-in page explains what's wrong
+        return redirect("voting:checkin")
+
+    session = _current_session(request, election, profile)
+    if session is None:
+        messages.error(request, "Choose your session before ticking voters.")
+        return redirect("voting:checkin")
+
+    # Only eligible members can be ticked, even if someone types another id into the address bar
+    member = get_object_or_404(Member.objects.eligible(election), pk=member_id)
+
+    if request.method == "POST":
+        try:
+            # atomic(): if the insert is refused, the database is left exactly as it was
+            with transaction.atomic():
+                VoteCheckIn.objects.create(
+                    election=election,
+                    member=member,
+                    session=session,
+                    ticked_by=request.user,
+                )
+        except IntegrityError:
+            # The one-vote-per-member-per-election rule refused it: they're already ticked
+            existing = VoteCheckIn.objects.select_related("session__centre", "ticked_by").get(
+                election=election, member=member
+            )
+            seconds_ago = (timezone.now() - existing.ticked_at).total_seconds()
+            if existing.ticked_by_id == request.user.id and seconds_ago < DOUBLE_TAP_SECONDS:
+                # This official's own double-tap: the first tap worked, so report success
+                messages.success(request, f"{member.full_name} is ticked. Hand over the ballot paper.")
+            else:
+                messages.error(
+                    request,
+                    f"STOP: {member.full_name} has already voted at {existing.session.centre.name}, "
+                    f"{_clock(existing.ticked_at)}, ticked by {_who(existing.ticked_by)}. "
+                    f"Do not give a ballot paper.",
+                )
+        else:
+            messages.success(request, f"{member.full_name} is ticked. Hand over the ballot paper.")
+        # Redirect after POST: refreshing the page can't send the tick again,
+        # and the search is cleared for the next voter
+        return redirect("voting:checkin")
+
+    # GET: the confirm screen. Someone may have ticked them since the search, so check again.
+    existing = (
+        VoteCheckIn.objects.filter(election=election, member=member)
+        .select_related("session__centre", "ticked_by")
+        .first()
+    )
+    member.age = member.age_on(election.date)
+    member.initials = _initials(member.full_name)
+    return render(request, "voting/confirm.html", {
+        "centre_label": profile.centre.name,
+        "member": member,
+        "session": session,
+        "existing": existing,
+        "query": request.GET.get("q", ""),   # so "Back to results" returns to the same search
+    })

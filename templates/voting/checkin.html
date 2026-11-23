@@ -186,7 +186,6 @@
         {{ results|length }} match{{ results|length|pluralize:"es" }}
       {% endif %}
     </p>
-    <p class="results-soon">Ticking switches on in the next step.</p>
 
     <ul class="results">
       {% for member in results %}
@@ -219,8 +218,8 @@
               </span>
             </p>
           {% else %}
-            {# Not voted: the Tick button (switched on in Step 11) #}
-            <button type="button" class="btn btn-tick btn-block" disabled>Tick as voted</button>
+            {# Not voted: the Tick button opens the confirm screen (keeps the search, for "Back") #}
+            <a href="{% url 'voting:tick' member.pk %}?q={{ query|urlencode }}" class="btn btn-tick btn-block">Tick as voted</a>
           {% endif %}
         </li>
       {% endfor %}

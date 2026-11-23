@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Confirm{% endblock %}
+
+{# Same stylesheet as the check-in page #}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'voting/checkin.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# Back to the same search results #}
+<a class="back-link" href="{% url 'voting:checkin' %}{% if query %}?q={{ query|urlencode }}{% endif %}">
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 7l-5 5 5 5"/></svg>
+  Back to results
+</a>
+
+{% if existing %}
+  {# Someone ticked this person after the search: stop, no button #}
+  <section class="stop-card" role="alert">
+    <div class="stop-band">
+      {# Raised hand icon #}
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11m0-6.5a1.5 1.5 0 0 1 3 0V11m0-5a1.5 1.5 0 0 1 3 0v7.5a6.5 6.5 0 0 1-6.5 6.5h-.6a6 6 0 0 1-4.6-2.2L4.6 14.6a1.5 1.5 0 0 1 2.3-1.9L8 14"/></svg>
+      <h1>Already voted</h1>
+    </div>
+    <div class="stop-body">
+      <p>
+        <strong>{{ member.full_name }}</strong> was ticked at
+        <strong>{{ existing.session.centre.name }}</strong>,
+        {{ existing.ticked_at|time:"g:i a" }}, by
+        {{ existing.ticked_by.get_full_name|default:existing.ticked_by.username }}.
+      </p>
+      <p class="stop-instruction">Do not give a ballot paper.</p>
+      <a href="{% url 'voting:checkin' %}" class="btn btn-block">Back to search</a>
+    </div>
+  </section>
+
+{% else %}
+  {# The confirm card: check the person, then tick #}
+  <section class="confirm-card">
+    <p class="confirm-question">Is this the person in front of you?</p>
+
+    <div class="confirm-person">
+      <span class="confirm-initials" aria-hidden="true">{{ member.initials }}</span>
+      <h1 class="confirm-name">{{ member.full_name }}</h1>
+    </div>
+
+    {# The details to check with them: age, community, phone #}
+    <dl class="confirm-details">
+      <div>
+        <dt>Age on election day</dt>
+        <dd>{{ member.age }}</dd>
+      </div>
+      {% if member.community %}
+        <div>
+          <dt>Community</dt>
+          <dd>{{ member.community }}</dd>
+        </div>
+      {% endif %}
+      {% if member.masked_phone %}
+        <div>
+          <dt>Phone</dt>
+          <dd>{{ member.masked_phone }}</dd>
+        </div>
+      {% endif %}
+      <div>
+        <dt>Session</dt>
+        <dd>{{ session.label }}</dd>
+      </div>
+    </dl>
+
+    {# POST: this is what actually records the vote #}
+    <form method="post" id="tick-form">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-tick btn-block btn-xl" id="tick-submit">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        <span>Yes, tick as voted</span>
+      </button>
+    </form>
+    <a class="btn btn-quiet btn-block" href="{% url 'voting:checkin' %}{% if query %}?q={{ query|urlencode }}{% endif %}">Cancel</a>
+
+    <p class="confirm-note">Ticked the wrong person? Only the Electoral Commissioner can undo a tick, so check first.</p>
+  </section>
+
+  <script>
+    // Slow mobile data: disable the button after the first tap, so it can't be sent twice
+    const tickButton = document.getElementById("tick-submit");
+    document.getElementById("tick-form").addEventListener("submit", () => {
+      tickButton.disabled = true;
+      tickButton.querySelector("span").textContent = "Ticking…";
+    });
+    // If they come back with the browser's Back button, make the button usable again
+    window.addEventListener("pageshow", () => {
+      tickButton.disabled = false;
+      tickButton.querySelector("span").textContent = "Yes, tick as voted";
+    });
+  </script>
+{% endif %}
+
+{% endblock %}

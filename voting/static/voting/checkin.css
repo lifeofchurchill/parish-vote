@@ -296,7 +296,6 @@
 
 /* ===== Results ===== */
 .results-count { margin: 18px 4px 10px; font-size: 15px; font-weight: 600; color: var(--muted); }
-.results-soon { margin: -6px 4px 12px; font-size: 14px; color: #9A6512; }   /* temporary, until Step 11 */
 .results { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 
 /* One voter */
@@ -374,7 +373,6 @@
 
 /* Not voted yet: the Tick button */
 .voter-card .btn-tick { margin-top: 14px; border-radius: 14px; }
-.voter-card .btn-tick:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* Already voted: red edge, and where/when/who in a tinted box */
 .voter-card.is-voted { border-color: #F0B9B5; background: #FFFAFA; box-shadow: inset 5px 0 0 var(--red); }
@@ -392,6 +390,103 @@
 }
 .voter-voted svg { flex: none; width: 20px; height: 20px; margin-top: 1px; }
 
+/* =====================================================================
+   Confirm screen
+   ===================================================================== */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 14px -6px;
+  padding: 8px 10px 8px 6px;
+  font-weight: 700;
+  color: var(--violet-700);
+  text-decoration: none;
+  border-radius: 10px;
+}
+.back-link:hover { background: var(--violet-100); }
+.back-link svg { width: 22px; height: 22px; }
+
+.confirm-card {
+  padding: 26px 22px 22px;
+  background: #fff;
+  border: 1px solid #E6E0EC;
+  border-radius: 28px;
+  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.04), 0 30px 60px -40px rgba(36, 17, 47, 0.6);
+}
+.confirm-question { margin: 0 0 16px; font-weight: 600; color: var(--muted); }
+
+/* The person: big initials and their name in the display font */
+.confirm-person { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.confirm-initials {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--violet-700);
+  background: var(--violet-100);
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px #F7F2FB;
+}
+.confirm-name { margin: 0; font-size: 34px; line-height: 1.05; overflow-wrap: anywhere; }
+
+/* Details to check, as a neat two-column list */
+.confirm-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  margin: 0 0 22px;
+  padding: 18px 0 0;
+  border-top: 1px solid #EEE8F3;
+}
+.confirm-details dt { font-size: 14px; color: var(--muted); }
+.confirm-details dd { margin: 2px 0 0; font-size: 19px; font-weight: 700; }
+
+/* The big green confirm button, with a tick icon */
+.btn-xl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 66px;
+  font-size: 20px;
+  border-radius: 18px;
+}
+.btn-xl svg { width: 26px; height: 26px; stroke-width: 2.4; }
+.btn-tick { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 24px -14px rgba(20, 108, 46, 0.8); }
+.btn-tick:hover { background: #0F5824; border-color: #0F5824; }
+
+/* Cancel: a quiet text button */
+.btn-quiet { border-color: transparent; background: transparent; }
+.btn-quiet:hover { background: var(--violet-100); }
+
+.confirm-note { margin: 14px 0 0; font-size: 14px; text-align: center; color: var(--muted); }
+
+/* ===== Already voted (STOP) ===== */
+.stop-card {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #F0B9B5;
+  border-radius: 28px;
+  box-shadow: 0 30px 60px -40px rgba(179, 38, 30, 0.7);
+}
+.stop-band {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 22px 20px;
+  color: #fff;
+  background: var(--red);
+}
+.stop-band svg { flex: none; width: 40px; height: 40px; stroke-width: 1.8; }
+.stop-band h1 { margin: 0; font-size: 34px; color: #fff; }
+.stop-body { padding: 20px 22px 22px; }
+.stop-body p { margin: 0 0 10px; }
+.stop-instruction { font-size: 20px; font-weight: 800; color: var(--red); }
+
 /* ===== Wider screens: a bit more room ===== */
 @media (min-width: 700px) {
   .page-heading { font-size: 44px; }
@@ -399,4 +494,6 @@
   .live-panel { padding: 28px 30px 30px; }
   .live-title { font-size: 42px; }
   .live-stats dd { font-size: 48px; }
+  .confirm-card { padding: 34px 34px 28px; }
+  .confirm-name { font-size: 42px; }
 }
