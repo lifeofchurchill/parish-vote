@@ -15,28 +15,58 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Gloock&display=swap">
 
+  {# style.css: colours, fonts, buttons, forms (every page). app.css: the app bar and page layout. #}
   <link rel="stylesheet" href="{% static 'voting/style.css' %}">
+  <link rel="stylesheet" href="{% static 'voting/app.css' %}">
+  {# Pages can add their own stylesheet here (e.g. the check-in pages load checkin.css) #}
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
   {# Pages like sign-in replace this whole block with their own layout #}
   {% block page %}
-    {# Top bar: the active election, and for signed-in officials their centre, name and sign-out #}
-    <header class="topbar">
-      <div class="topbar-title">{{ election.name|default:"Parish elections" }}</div>
-      {% if user.is_authenticated %}
-        <div class="topbar-user">
-          {% if centre_label %}<span class="topbar-centre">{{ centre_label }}</span>{% endif %}
-          <span>{{ user.get_full_name|default:user.username }}</span>
-          {# Sign-out must be a POST form in current Django versions #}
-          <form method="post" action="{% url 'logout' %}" class="inline">
-            {% csrf_token %}
-            <button type="submit" class="link-button">Sign out</button>
-          </form>
-        </div>
-      {% endif %}
+    <header class="appbar">
+      {# Decorative: a quiet rose window in the bar's corner #}
+      <div class="appbar-rose" aria-hidden="true">{% include "voting/rose_window.svg" %}</div>
+
+      <div class="appbar-inner">
+        {# Left: parish logo, the active election and its date #}
+        <a class="appbar-brand" href="{% url 'voting:checkin' %}">
+          <img class="appbar-logo" src="{% static 'voting/img/logo.png' %}" alt="" onerror="this.remove()">
+          <span>
+            <span class="appbar-title">{{ election.name|default:"Parish elections" }}</span>
+            {% if election %}<span class="appbar-date">{{ election.date|date:"l j F Y" }}</span>{% endif %}
+          </span>
+        </a>
+
+        {% if user.is_authenticated %}
+          {# Right: who is signed in, at which centre, and sign-out #}
+          <div class="appbar-user">
+            {# Initials from the official's name, or the first two letters of their username #}
+            <span class="avatar" aria-hidden="true">{% if user.first_name %}{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}{% else %}{{ user.username|slice:":2"|upper }}{% endif %}</span>
+            <span class="appbar-user-text">
+              <span class="appbar-user-name">{{ user.get_full_name|default:user.username }}</span>
+              {% if centre_label %}
+                <span class="appbar-user-centre">
+                  {# Map pin icon #}
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                  {{ centre_label }}
+                </span>
+              {% endif %}
+            </span>
+            {# Sign-out must be a POST form in current Django versions #}
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="icon-button" aria-label="Sign out" title="Sign out">
+                {# Door on the left, arrow leaving it to the right #}
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+              </button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
     </header>
 
-    <main class="container">
+    <main class="app-main">
       {# Green/red messages, e.g. "Ticked: Ama Mensah" or "STOP: already voted" #}
       {% for message in messages %}
         <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>

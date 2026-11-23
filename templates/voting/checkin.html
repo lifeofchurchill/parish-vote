@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Check-in{% endblock %}
+
+{# This page's own styles, on top of style.css and app.css #}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'voting/checkin.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% if problem == "no_election" %}
+  {# The Commissioner hasn't ticked "Is active" on any election #}
+  <section class="notice">
+    <div class="notice-icon">
+      {# Calendar icon #}
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+    </div>
+    <h1>No election is open</h1>
+    <p>Check-in starts once the Electoral Commissioner opens an election. Try again later, or let them know.</p>
+  </section>
+
+{% elif problem == "no_centre" %}
+  {# The account exists but has no OrganizerProfile #}
+  <section class="notice">
+    <div class="notice-icon">
+      {# Map pin icon #}
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+    </div>
+    <h1>Your account isn't linked to a polling centre</h1>
+    <p>Ask the Electoral Commissioner to assign you to a centre, then sign in again.</p>
+    <p class="notice-meta">Signed in as <strong>{{ user.username }}</strong></p>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn">Sign in with another account</button>
+    </form>
+  </section>
+
+{% elif problem == "no_sessions" %}
+  {# The election has no sessions set up for this official's centre #}
+  <section class="notice">
+    <div class="notice-icon">
+      {# Clock icon #}
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+    </div>
+    <h1>No sessions at your centre yet</h1>
+    <p>This election has no voting sessions set up for {{ centre_label }}. Ask the Electoral Commissioner to add them.</p>
+  </section>
+
+{% elif not current_session %}
+  {# Before check-in: pick the session #}
+  <header>
+    <h1 class="page-heading">Which session is this?</h1>
+    <p class="page-intro">Pick the Mass you're checking voters in after. You can switch at any time.</p>
+  </header>
+
+  {# One form, one button per session: the button you tap sends its own value #}
+  <form method="post" action="{% url 'voting:set_session' %}" class="session-list">
+    {% csrf_token %}
+    {% for session in sessions %}
+      <button type="submit" name="session" value="{{ session.pk }}"
+              class="session-card{% if session == suggested_session %} is-now{% endif %}">
+        {# Left: the start time, large #}
+        <span class="session-time" aria-hidden="true">
+          {% if session.starts_at %}
+            <span class="session-clock">{{ session.starts_at|time:"g:i" }}</span>
+            <span class="session-ampm">{{ session.starts_at|time:"a" }}</span>
+          {% else %}
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+          {% endif %}
+        </span>
+        {# Middle: the session name and how many voters were ticked in it #}
+        <span class="session-body">
+          <span class="session-label">
+            {{ session.label }}
+            {% if session == suggested_session %}<span class="pill-now">Now</span>{% endif %}
+          </span>
+          <span class="session-meta">
+            {% if session.ticked %}{{ session.ticked }} voter{{ session.ticked|pluralize }} ticked{% else %}No voters ticked yet{% endif %}
+          </span>
+        </span>
+        {# Right: arrow in a circle #}
+        <span class="session-go" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M10 7l5 5-5 5"/></svg>
+        </span>
+      </button>
+    {% endfor %}
+  </form>
+
+{% else %}
+  {# Session chosen: the live panel, with this session's numbers #}
+  <section class="live-panel">
+    <div class="live-panel-top">
+      <span class="live-pill"><span class="live-dot" aria-hidden="true"></span>Checking in</span>
+      <form method="post" action="{% url 'voting:set_session' %}">
+        {% csrf_token %}
+        <button type="submit" name="session" value="" class="ghost-button">Change session</button>
+      </form>
+    </div>
+
+    <h1 class="live-title">{{ current_session.label }}</h1>
+    <p class="live-centre">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      {{ centre_label }}
+    </p>
+
+    <dl class="live-stats">
+      <div>
+        <dt>Ticked this session</dt>
+        <dd>{{ session_total }}</dd>
+      </div>
+      <div>
+        <dt>Ticked at this centre</dt>
+        <dd>{{ centre_total }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  {# The voter search sits here. It switches on in Step 10. #}
+  <section class="search-area">
+    <label for="q" class="sr-only">Search by name or phone number</label>
+    <div class="search-field">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+      <input type="search" id="q" placeholder="Name or phone number" disabled>
+    </div>
+    <p class="search-hint">Voter search switches on in the next step.</p>
+  </section>
+{% endif %}
+
+{% endblock %}

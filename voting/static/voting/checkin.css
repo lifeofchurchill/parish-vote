@@ -1,0 +1,212 @@
+/* =====================================================================
+   Check-in pages: session picker, live session panel, search and results.
+   Loaded only by the check-in pages, on top of style.css and app.css,
+   so it uses the same colours and fonts (var(--violet-700) etc.).
+   ===================================================================== */
+
+/* ===== Session picker ===== */
+.session-list { display: grid; gap: 14px; }
+
+/* One session = one big card-shaped button */
+.session-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 18px 18px 18px 20px;
+  font: inherit;
+  text-align: left;
+  color: var(--violet-900);
+  background: #fff;
+  border: 1px solid #E6E0EC;
+  border-radius: 22px;
+  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.04), 0 18px 34px -26px rgba(36, 17, 47, 0.5);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.session-card:hover {
+  transform: translateY(-2px);
+  border-color: #CDBEDB;
+  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.05), 0 24px 40px -24px rgba(36, 17, 47, 0.55);
+}
+.session-card:active { transform: translateY(0); }
+
+/* Left column: the time, set like a clock face in the display font */
+.session-time {
+  display: grid;
+  justify-items: center;
+  min-width: 78px;
+  padding-right: 18px;
+  border-right: 1px solid #EEE8F3;     /* hairline between time and name */
+  color: var(--violet-700);
+}
+.session-clock { font-family: var(--font-display); font-size: 34px; line-height: 1; }
+.session-ampm { margin-top: 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.session-time svg { width: 30px; height: 30px; }
+
+/* Middle column: name and count */
+.session-body { min-width: 0; }
+.session-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.session-meta { display: block; margin-top: 4px; font-size: 15px; color: var(--muted); }
+
+/* Right column: arrow in a circle that fills violet on hover */
+.session-go {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--violet-700);
+  background: var(--violet-100);
+  border-radius: 50%;
+  transition: background 0.15s, color 0.15s;
+}
+.session-go svg { width: 22px; height: 22px; }
+.session-card:hover .session-go { color: #fff; background: var(--violet-700); }
+
+/* The session happening right now: a candle-gold edge and a "Now" tag */
+.session-card.is-now { border-color: var(--candle); background: #FFFCF5; }
+.session-card.is-now .session-time { color: #9A6512; }
+.pill-now {
+  padding: 2px 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #5A3A05;
+  background: var(--candle-light);
+  border-radius: 999px;
+}
+
+/* ===== Live session panel (after a session is chosen) ===== */
+.live-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 22px 22px 24px;
+  color: #fff;
+  background:
+    radial-gradient(ellipse 70% 90% at 100% 0%, rgba(233, 169, 59, 0.2), transparent 60%),
+    var(--grain),
+    var(--violet-900);
+  border-radius: 26px;
+  box-shadow: 0 30px 60px -34px rgba(36, 17, 47, 0.8);
+}
+.live-panel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* "Checking in" with a softly pulsing green dot */
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+.live-dot {
+  width: 9px;
+  height: 9px;
+  background: #4ADE80;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .live-dot { animation: live-pulse 2s ease-out infinite; }
+}
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); }
+  70%  { box-shadow: 0 0 0 9px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+
+/* "Change session": a quiet outlined pill on the dark panel */
+.ghost-button {
+  min-height: 40px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ghost-button:hover { background: rgba(255, 255, 255, 0.1); }
+
+.live-title { margin: 0 0 6px; font-size: 34px; line-height: 1.05; color: #FFF6E6; }
+.live-centre {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 15px;
+  color: var(--tracery);
+}
+.live-centre svg { width: 16px; height: 16px; }
+
+/* The two numbers, in large gold figures */
+.live-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.live-stats > div + div { padding-left: 18px; border-left: 1px solid rgba(255, 255, 255, 0.12); }
+.live-stats dt { font-size: 14px; color: var(--tracery); }
+.live-stats dd {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--candle-light);
+  font-variant-numeric: tabular-nums;   /* digits all the same width, so counts don't jiggle */
+}
+
+/* ===== Search ===== */
+.search-area { margin-top: 22px; }
+.search-field { position: relative; }
+.search-field svg {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.search-field input {
+  min-height: 64px;
+  padding-left: 54px;
+  font-size: 19px;
+  border: 1px solid #D6CCE0;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.04), 0 14px 30px -26px rgba(36, 17, 47, 0.5);
+}
+.search-field input:disabled { background: #FBF9FD; cursor: not-allowed; }
+.search-hint { margin: 10px 4px 0; font-size: 15px; color: var(--muted); }
+
+/* ===== Wider screens: a bit more room ===== */
+@media (min-width: 700px) {
+  .page-heading { font-size: 44px; }
+  .session-label { font-size: 19px; }
+  .live-panel { padding: 28px 30px 30px; }
+  .live-title { font-size: 42px; }
+  .live-stats dd { font-size: 48px; }
+}

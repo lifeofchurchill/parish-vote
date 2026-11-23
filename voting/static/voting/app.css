@@ -1,0 +1,171 @@
+/* =====================================================================
+   App shell for signed-in pages: the violet app bar, page layout,
+   page headings and notices. Loaded by base.html on every page that
+   uses the app bar (not by the sign-in page, which has its own layout).
+   ===================================================================== */
+
+/* ===== Page layout ===== */
+.app-main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 18px 56px;
+}
+
+/* ===== App bar ===== */
+.appbar {
+  position: relative;
+  isolation: isolate;          /* keeps the decorative rose window inside the bar */
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(ellipse 60% 120% at 100% 0%, rgba(233, 169, 59, 0.16), transparent 60%),
+    var(--grain),
+    var(--violet-900);
+  border-bottom: 1px solid rgba(233, 169, 59, 0.55);   /* hairline of candle gold */
+}
+.appbar-inner {
+  position: relative;
+  z-index: 1;                  /* text above the rose window */
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 14px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+}
+
+/* A quiet, static rose window in the bar's right corner (same SVG as the sign-in page) */
+.appbar-rose .rose-window {
+  width: 560px;
+  top: -300px;
+  right: -170px;
+  opacity: 0.55;
+}
+.appbar-rose .rose-window .rw,
+.appbar-rose .rose-window .rw[class*="glass-"] {
+  animation: none;             /* only the sign-in page animates */
+  stroke-dashoffset: 0;
+}
+
+/* Left: logo, election name and date */
+.appbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.appbar-logo {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 2px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(233, 169, 59, 0.7);
+}
+.appbar-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1.15;
+  color: #FFF6E6;
+  text-wrap: balance;          /* no single word ("2026") left alone on the second line */
+}
+.appbar-date { display: block; font-size: 13px; font-weight: 600; color: var(--candle-light); }
+
+/* Right: who is signed in, where, and sign-out */
+.appbar-user { display: flex; align-items: center; gap: 12px; }
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--violet-900);
+  background: var(--candle-light);
+  border-radius: 50%;
+}
+.appbar-user-name { display: block; font-size: 15px; font-weight: 700; line-height: 1.2; }
+.appbar-user-centre {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--tracery);
+}
+.appbar-user-centre svg { width: 14px; height: 14px; flex: none; }
+
+/* Round icon button (sign-out) */
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.icon-button:hover { background: rgba(255, 255, 255, 0.18); }
+.icon-button svg { width: 20px; height: 20px; }
+
+/* Shared line-icon look: outline strokes in the current text colour */
+.icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Phones: brand on one row, the signed-in official on a second row below a hairline */
+@media (max-width: 640px) {
+  .appbar-user {
+    width: 100%;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .appbar-user-text { flex: 1; min-width: 0; }
+}
+
+/* ===== Page headings ===== */
+.page-heading { font-size: 36px; line-height: 1.05; margin: 0 0 8px; }
+.page-intro { max-width: 46ch; margin: 0 0 26px; color: var(--muted); }
+
+/* ===== Notices: something stops the official from starting ===== */
+.notice {
+  max-width: 520px;
+  margin: 32px auto 0;
+  padding: 36px 28px 30px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #E6E0EC;
+  border-radius: 24px;
+  box-shadow: 0 24px 48px -32px rgba(36, 17, 47, 0.45);
+}
+.notice-icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 18px;
+  color: var(--violet-700);
+  background: var(--violet-100);
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px #F7F2FB;
+}
+.notice-icon svg { width: 30px; height: 30px; }
+.notice h1 { font-size: 28px; margin: 0 0 10px; }
+.notice p { margin: 0 auto; max-width: 38ch; color: var(--muted); }
+.notice .btn { margin-top: 22px; }
+.notice-meta { margin-top: 18px !important; font-size: 15px; }
