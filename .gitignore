@@ -1,0 +1,17 @@
+# Member data: NEVER commit the church's export (personal data, including minors)
+*.xlsx
+*.xls
+*.csv
+
+# Local database and collected static files
+db.sqlite3
+staticfiles/
+
+# Python and virtual environment
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Secrets
+.env
