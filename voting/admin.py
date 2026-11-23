@@ -1,9 +1,37 @@
 """
 Admin pages for you and the Commissioner (at /admin/).
+Setting up a new election happens entirely here: no code changes.
 """
 from django.contrib import admin
+from django.db.models import DateField, Value
+from django.utils import timezone
 
-from .models import Member, OrganizerProfile, VoteCheckIn
+from .models import (
+    Election,
+    Member,
+    OrganizerProfile,
+    PollingCentre,
+    VoteCheckIn,
+    VotingSession,
+)
+
+
+class VotingSessionInline(admin.TabularInline):
+    # Sessions are edited inside their election's page, as rows in a table
+    model = VotingSession
+    fields = ("centre", "label", "starts_at")
+    extra = 1
+
+
+@admin.register(Election)
+class ElectionAdmin(admin.ModelAdmin):
+    list_display = ("name", "date", "age_rule", "is_active")
+    inlines = [VotingSessionInline]
+
+
+@admin.register(PollingCentre)
+class PollingCentreAdmin(admin.ModelAdmin):
+    list_display = ("name",)
 
 
 @admin.register(Member)
@@ -14,6 +42,19 @@ class MemberAdmin(admin.ModelAdmin):
     search_fields = ("full_name", "church_id", "phone", "other_phones")
     list_filter = ("community",)
 
+    def get_queryset(self, request):
+        # Look up the active election ONCE per page, and attach its date to every row,
+        # so the age column doesn't run one extra query per member
+        election = Election.objects.active()
+        day = election.date if election else timezone.localdate()
+        return super().get_queryset(request).annotate(
+            age_date=Value(day, output_field=DateField())
+        )
+
+    @admin.display(description="Age on election day")
+    def age(self, obj):
+        return obj.age_on(obj.age_date)
+
 
 @admin.register(OrganizerProfile)
 class OrganizerProfileAdmin(admin.ModelAdmin):
@@ -23,8 +64,8 @@ class OrganizerProfileAdmin(admin.ModelAdmin):
 
 @admin.register(VoteCheckIn)
 class VoteCheckInAdmin(admin.ModelAdmin):
-    list_display = ("member", "centre", "session", "ticked_by", "ticked_at")
-    list_filter = ("centre", "session")
+    list_display = ("member", "election", "session", "ticked_by", "ticked_at")
+    list_filter = ("election", "session__centre")
     search_fields = ("member__full_name",)
 
     # Ticks can only be made from the check-in page, and undone later from the

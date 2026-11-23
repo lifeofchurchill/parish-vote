@@ -1,11 +1,11 @@
 """
-Import eligible members from the church's CSV export.
+Import members from the church's CSV export, for the ACTIVE election.
 
     python manage.py import_members "path/to/members.csv" --dry-run   (check only)
     python manage.py import_members "path/to/members.csv"             (save)
 
-- Imports only members aged 13-38 on election day, plus anyone whose date
-  of birth is missing or unreadable (they go on the "needs checking" list).
+- Imports only members who meet the active election's age rule, plus anyone
+  whose date of birth is missing or unreadable (they go on the "needs checking" list).
 - Safe to run again with a fresh export: matches people by their church id,
   so existing members are updated, never duplicated, and ticks are never touched.
 """
@@ -21,7 +21,7 @@ from voting.cleaning import (
     phone_looks_damaged,
     read_csv_rows,
 )
-from voting.models import Member, eligible_dob_range
+from voting.models import Election, Member
 
 # Columns we need from the church's export (others are ignored on purpose)
 REQUIRED_COLUMNS = ["id", "name", "birthDate", "phone", "community"]
@@ -31,7 +31,7 @@ MAX_PROBLEMS_SHOWN = 40
 
 
 class Command(BaseCommand):
-    help = "Import eligible members (13-38) from the church's CSV export."
+    help = "Import members who meet the active election's age rule from the church's CSV export."
 
     def add_arguments(self, parser):
         parser.add_argument("csv_path", help="Path to the church's CSV file")
@@ -42,6 +42,15 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        # ---- 0. Which election are we importing for? ----
+        election = Election.objects.active()
+        if election is None:
+            raise CommandError(
+                "No active election. In the admin, open Elections and tick 'Is active' "
+                "on the election you're running."
+            )
+        earliest, latest = election.dob_range()
+
         # ---- 1. Read the file ----
         try:
             encoding, rows = read_csv_rows(options["csv_path"], REQUIRED_COLUMNS)
@@ -50,7 +59,6 @@ class Command(BaseCommand):
         except ValueError as error:
             raise CommandError(str(error))
 
-        earliest, latest = eligible_dob_range()
         counts = Counter()
         problems = []
         to_save = {}  # church_id -> cleaned fields (a dict, so repeated ids collapse)
@@ -75,8 +83,10 @@ class Command(BaseCommand):
                 counts["unreadable_dob"] += 1
                 problems.append(f"Line {line_no} (id {church_id}): {error}, imported for checking")
 
-            # Known date of birth outside 13-38: not a voter, don't store their data
-            if dob is not None and not (earliest <= dob <= latest):
+            # Known date of birth outside the age rule: not a voter, don't store their data
+            too_old = dob is not None and earliest is not None and dob < earliest
+            too_young = dob is not None and latest is not None and dob > latest
+            if too_old or too_young:
                 counts["skipped_outside_age"] += 1
                 continue
 
@@ -105,10 +115,11 @@ class Command(BaseCommand):
         without_dob = len(to_save) - with_dob
         already_in_db = set(Member.objects.values_list("church_id", flat=True))
 
+        self.stdout.write(f"Election: {election.name} (ages {election.age_rule})")
         self.stdout.write(f"File read: {len(rows)} rows (encoding: {encoding})")
-        self.stdout.write(f"  Eligible, aged 13-38:                 {with_dob}")
+        self.stdout.write(f"  Meet the age rule:                    {with_dob}")
         self.stdout.write(f"  No/unreadable date of birth (check):  {without_dob}")
-        self.stdout.write(f"  Skipped, outside 13-38:               {counts['skipped_outside_age']}")
+        self.stdout.write(f"  Skipped, outside the age rule:        {counts['skipped_outside_age']}")
         self.stdout.write(f"  Skipped, missing id or name:          {counts['skipped_no_id_or_name']}")
         self.stdout.write(f"  Phones damaged by Excel:              {counts['damaged_phone']}")
         self.stdout.write(f"  Repeated ids in file:                 {counts['duplicate_id']}")
