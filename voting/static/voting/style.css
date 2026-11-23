@@ -1,0 +1,125 @@
+/* ===== Base: large, high-contrast text that stays readable in bright sun ===== */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  color: #111;
+  background: #f4f4f1;
+}
+
+h1 { font-size: 24px; margin: 0 0 12px; }
+h2 { font-size: 20px; margin: 0; }
+.muted { color: #555; }
+
+/* Hidden visually but still read by screen readers */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ===== Top bar ===== */
+.topbar {
+  background: #1f3a5f;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.topbar-title { font-weight: 700; }
+.topbar-user { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 15px; }
+.topbar-centre { background: rgba(255, 255, 255, 0.15); padding: 2px 8px; border-radius: 4px; }
+
+/* ===== Layout ===== */
+.container { max-width: 640px; margin: 0 auto; padding: 16px; }
+.card { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 20px; }
+.inline { display: inline; }
+
+/* ===== Forms ===== */
+label { display: block; font-weight: 600; margin: 12px 0 4px; }
+
+input[type="text"],
+input[type="password"],
+input[type="search"] {
+  width: 100%;
+  font-size: 18px;
+  padding: 14px;
+  border: 2px solid #888;
+  border-radius: 8px;
+}
+input:focus { outline: 3px solid #f2b705; border-color: #1f3a5f; }
+
+/* ===== Buttons: big enough to tap quickly in a crowd ===== */
+.btn {
+  display: inline-block;
+  min-height: 52px;
+  padding: 14px 18px;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  color: #1f3a5f;
+  background: #fff;
+  border: 2px solid #1f3a5f;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-primary { background: #1f3a5f; color: #fff; }
+.btn-tick { background: #146c2e; border-color: #146c2e; color: #fff; }
+.btn-block { display: block; width: 100%; margin-top: 12px; }
+
+/* A button that looks like a link (used for Log out and Change) */
+.link-button {
+  background: none; border: none; padding: 0;
+  color: inherit; font-size: inherit;
+  text-decoration: underline; cursor: pointer;
+}
+
+/* ===== Messages ===== */
+.alert { padding: 14px 16px; margin-bottom: 16px; font-weight: 600; border: 2px solid; border-radius: 8px; }
+.alert-success { background: #e3f4e8; border-color: #146c2e; color: #0b3d1a; }
+.alert-error { background: #fde8e8; border-color: #b3261e; color: #5c0f0b; }
+
+/* ===== Check-in page (Steps 8-10) ===== */
+.session-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #fff; border: 1px solid #ddd; border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 12px;
+}
+
+.search { display: flex; gap: 8px; margin-bottom: 16px; }
+.search input { flex: 1; }
+
+.member-card {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px;
+  background: #fff; border: 2px solid #ddd; border-radius: 12px;
+  padding: 14px; margin-bottom: 10px;
+}
+/* Voted members get a red border so they stand out immediately */
+.member-card.is-voted { border-color: #b3261e; background: #fff7f7; }
+.member-info p { margin: 2px 0; }
+.member-status { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+
+.badge { font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+.badge-not { background: #e6e6e1; color: #333; }
+.badge-voted { background: #b3261e; color: #fff; }
+.voted-detail { margin: 0; font-size: 15px; text-align: right; color: #5c0f0b; }
+
+.empty { background: #fff; border: 2px dashed #aaa; border-radius: 12px; padding: 16px; }
+.counter { text-align: center; margin-top: 20px; color: #333; }
+
+/* ===== Confirm page (Step 10) ===== */
+.details { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0 0 16px; }
+.details dt { font-weight: 700; color: #555; }
+.details dd { margin: 0; }
+
+/* ===== Small phones: stack the status under the name ===== */
+@media (max-width: 420px) {
+  .member-status { width: 100%; align-items: flex-start; }
+  .voted-detail { text-align: left; }
+}

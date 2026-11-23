@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h1>Organizer log in</h1>
+
+  {# Django's LoginView puts errors in form.errors when the details are wrong #}
+  {% if form.errors %}
+    <div class="alert alert-error">Wrong username or password. Try again.</div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <label for="id_username">Username</label>
+    {# autocapitalize="none" stops phones capitalising the first letter #}
+    <input type="text" name="username" id="id_username"
+           autocomplete="username" autocapitalize="none" required autofocus>
+
+    <label for="id_password">Password</label>
+    <input type="password" name="password" id="id_password"
+           autocomplete="current-password" required>
+
+    {# Sends the organizer back to the page they wanted after logging in #}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="btn btn-primary btn-block">Log in</button>
+  </form>
+</section>
+{% endblock %}
