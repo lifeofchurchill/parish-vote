@@ -4,20 +4,25 @@ Views for the check-in pages used by election officials.
 Flow on election day:
   1. The official signs in. Their account is tied to one polling centre.
   2. They choose the session (which Mass they're checking voters in after).
-  3. They search for a voter by name or phone.        (Step 10)
+  3. They search for a voter by name or phone.
   4. They confirm and tick the voter.                 (Step 11)
 """
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count
+from django.db.models import Count, Prefetch, Q
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .models import Election, VoteCheckIn, VotingSession
+from .models import Election, Member, VoteCheckIn, VotingSession
 
 # Key used to remember the official's chosen session between page loads
 # (stored in Django's session, i.e. tied to this browser's sign-in)
 SESSION_KEY = "voting_session_id"
+
+# Search rules
+MIN_NAME_LETTERS = 2     # "a" would match half the parish
+MIN_PHONE_DIGITS = 4     # "02" would match almost every number
+MAX_RESULTS = 25         # keeps the page fast on a phone
 
 
 # ---------- small helpers ----------
@@ -56,11 +61,60 @@ def _suggested_session(election, sessions):
     return started[-1] if started else None
 
 
+def _initials(name):
+    """'Tetteh Anita' -> 'TA', 'Ama' -> 'A'. Used for the circle on each result card."""
+    words = name.split()
+    if not words:
+        return "?"
+    if len(words) == 1:
+        return words[0][0].upper()
+    # First letter of the first word + first letter of the last word
+    return (words[0][0] + words[-1][0]).upper()
+
+
+def _search(election, query):
+    """
+    Search eligible members by phone number or by name.
+    Returns (members, problem). problem is None, "short_name" or "short_phone".
+    """
+    compact = query.replace(" ", "").replace("+", "").replace("-", "")
+
+    if compact.isdigit():
+        # Phone search: "+233 24 123 4567" and "024 123 4567" both work
+        if len(compact) < MIN_PHONE_DIGITS:
+            return [], "short_phone"
+        digits = "0" + compact[3:] if compact.startswith("233") and len(compact) > 4 else compact
+        members = Member.objects.eligible(election).filter(
+            Q(phone__contains=digits) | Q(other_phones__contains=digits)
+        )
+    else:
+        # Name search: every word must appear somewhere in the name, in any order,
+        # so "anita tetteh" finds "Tetteh Anita"
+        if len(compact) < MIN_NAME_LETTERS:
+            return [], "short_name"
+        members = Member.objects.eligible(election)
+        for word in query.split():
+            members = members.filter(full_name__icontains=word)
+
+    # Fetch each member's check-in for THIS election in one extra query (not one per member),
+    # with the session, centre and official who ticked them
+    members = members.prefetch_related(
+        Prefetch(
+            "checkins",
+            queryset=VoteCheckIn.objects.filter(election=election)
+                                        .select_related("session__centre", "ticked_by"),
+            to_attr="records",
+        )
+    )
+    # One more than we show, so we know whether there were more matches
+    return list(members[: MAX_RESULTS + 1]), None
+
+
 # ---------- pages ----------
 
 @login_required
 def checkin(request):
-    """Main check-in page: the session picker, then the live session panel."""
+    """Main check-in page: session picker, live session panel, search and results."""
     election = Election.objects.active()
     profile = _get_profile(request)
 
@@ -90,6 +144,23 @@ def checkin(request):
             election=election, session__centre=profile.centre
         ).count(),
     }
+
+    # Search only once a session is chosen
+    query = request.GET.get("q", "").strip()
+    if current and query:
+        members, search_problem = _search(election, query)
+        for member in members:
+            # Values the result card needs, worked out once here instead of in the template
+            member.age = member.age_on(election.date)
+            member.initials = _initials(member.full_name)
+            member.record = member.records[0] if member.records else None
+        context.update({
+            "query": query,
+            "search_problem": search_problem,
+            "results": members[:MAX_RESULTS],
+            "more_results": len(members) > MAX_RESULTS,
+        })
+
     return render(request, "voting/checkin.html", context)
 
 

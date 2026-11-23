@@ -31,7 +31,7 @@
       <div class="appbar-inner">
         {# Left: parish logo, the active election and its date #}
         <a class="appbar-brand" href="{% url 'voting:checkin' %}">
-          <img class="appbar-logo" src="{% static 'voting/img/logo.png' %}" alt="" onerror="this.remove()">
+          <img class="appbar-logo" src="{% static 'voting/img/Logo.jpeg' %}" alt="" onerror="this.remove()">
           <span>
             <span class="appbar-title">{{ election.name|default:"Parish elections" }}</span>
             {% if election %}<span class="appbar-date">{{ election.date|date:"l j F Y" }}</span>{% endif %}

@@ -88,43 +88,144 @@
   </form>
 
 {% else %}
-  {# Session chosen: the live panel, with this session's numbers #}
-  <section class="live-panel">
-    <div class="live-panel-top">
-      <span class="live-pill"><span class="live-dot" aria-hidden="true"></span>Checking in</span>
+  {% if query %}
+    {# While searching: a slim strip, so the results get the screen #}
+    <section class="live-strip">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span class="live-strip-text">
+        <strong>{{ current_session.label }}</strong>
+        <span>{{ session_total }} this session, {{ centre_total }} at this centre</span>
+      </span>
       <form method="post" action="{% url 'voting:set_session' %}">
         {% csrf_token %}
-        <button type="submit" name="session" value="" class="ghost-button">Change session</button>
+        <button type="submit" name="session" value="" class="strip-button">Change</button>
       </form>
-    </div>
-
-    <h1 class="live-title">{{ current_session.label }}</h1>
-    <p class="live-centre">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-      {{ centre_label }}
-    </p>
-
-    <dl class="live-stats">
-      <div>
-        <dt>Ticked this session</dt>
-        <dd>{{ session_total }}</dd>
+    </section>
+  {% else %}
+    {# Not searching: the full live panel, with this session's numbers #}
+    <section class="live-panel">
+      <div class="live-panel-top">
+        <span class="live-pill"><span class="live-dot" aria-hidden="true"></span>Checking in</span>
+        <form method="post" action="{% url 'voting:set_session' %}">
+          {% csrf_token %}
+          <button type="submit" name="session" value="" class="ghost-button">Change session</button>
+        </form>
       </div>
-      <div>
-        <dt>Ticked at this centre</dt>
-        <dd>{{ centre_total }}</dd>
-      </div>
-    </dl>
-  </section>
 
-  {# The voter search sits here. It switches on in Step 10. #}
-  <section class="search-area">
+      <h1 class="live-title">{{ current_session.label }}</h1>
+      <p class="live-centre">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        {{ centre_label }}
+      </p>
+
+      <dl class="live-stats">
+        <div>
+          <dt>Ticked this session</dt>
+          <dd>{{ session_total }}</dd>
+        </div>
+        <div>
+          <dt>Ticked at this centre</dt>
+          <dd>{{ centre_total }}</dd>
+        </div>
+      </dl>
+    </section>
+  {% endif %}
+
+  {# Search: a GET form, so the search shows in the address bar and Back works #}
+  <form method="get" class="search-area" role="search">
     <label for="q" class="sr-only">Search by name or phone number</label>
-    <div class="search-field">
+    <div class="search-field{% if query %} has-clear{% endif %}">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
-      <input type="search" id="q" placeholder="Name or phone number" disabled>
+      {# enterkeyhint="search" shows "Search" on the phone keyboard's Enter key #}
+      <input type="search" id="q" name="q" value="{{ query }}" placeholder="Name or phone"
+             autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search"
+             {% if not query %}autofocus{% endif %}>
+      {% if query %}
+        {# Clear: back to the empty search #}
+        <a href="{% url 'voting:checkin' %}" class="search-clear" aria-label="Clear search">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </a>
+      {% endif %}
+      <button type="submit" class="search-go">Search</button>
     </div>
-    <p class="search-hint">Voter search switches on in the next step.</p>
-  </section>
+  </form>
+
+  {% if not query %}
+    {# Nothing typed yet: quick tips #}
+    <section class="search-tips">
+      <h2>Find the voter</h2>
+      <ul>
+        <li>Type any part of their name. Word order doesn't matter: "anita tetteh" finds Tetteh Anita.</li>
+        <li>Or type at least 4 digits of their phone number.</li>
+      </ul>
+    </section>
+
+  {% elif search_problem == "short_name" %}
+    <p class="search-note">Type at least 2 letters of the name.</p>
+
+  {% elif search_problem == "short_phone" %}
+    <p class="search-note">Type at least 4 digits of the phone number.</p>
+
+  {% elif not results %}
+    {# Searched, nothing found #}
+    <section class="search-empty">
+      <h2>No eligible voter matches "{{ query }}"</h2>
+      <ul>
+        <li>Check the spelling, or try just their first or last name.</li>
+        <li>Try their phone number instead.</li>
+        <li>Still not found? They may be outside the age rule or missing from the church list. Send them to the Electoral Commissioner.</li>
+      </ul>
+    </section>
+
+  {% else %}
+    {# Results #}
+    <p class="results-count">
+      {% if more_results %}
+        More than {{ results|length }} matches. Add more of the name to narrow it down.
+      {% else %}
+        {{ results|length }} match{{ results|length|pluralize:"es" }}
+      {% endif %}
+    </p>
+    <p class="results-soon">Ticking switches on in the next step.</p>
+
+    <ul class="results">
+      {% for member in results %}
+        <li class="voter-card{% if member.record %} is-voted{% endif %}">
+          {# Initials | name | status on the first row; age, community and phone across the second #}
+          <div class="voter-head">
+            <span class="voter-initials" aria-hidden="true">{{ member.initials }}</span>
+            <h2 class="voter-name">{{ member.full_name }}</h2>
+            {# Status in words, not just colour #}
+            {% if member.record %}
+              <span class="status status-voted">Voted</span>
+            {% else %}
+              <span class="status status-open">Not voted</span>
+            {% endif %}
+            <p class="voter-meta">
+              <span>{{ member.age }} yrs</span>
+              {% if member.community %}<span>{{ member.community }}</span>{% endif %}
+              {% if member.masked_phone %}<span>{{ member.masked_phone }}</span>{% endif %}
+            </p>
+          </div>
+
+          {% if member.record %}
+            {# Already voted: where, when and who ticked them. No button. #}
+            <p class="voter-voted">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+              <span>
+                Ticked at <strong>{{ member.record.session.centre.name }}</strong>,
+                {{ member.record.ticked_at|time:"g:i a" }}
+                by {{ member.record.ticked_by.get_full_name|default:member.record.ticked_by.username }}
+              </span>
+            </p>
+          {% else %}
+            {# Not voted: the Tick button (switched on in Step 11) #}
+            <button type="button" class="btn btn-tick btn-block" disabled>Tick as voted</button>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
 {% endif %}
 
 {% endblock %}
