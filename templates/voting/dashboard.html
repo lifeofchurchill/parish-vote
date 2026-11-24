@@ -72,7 +72,10 @@
     {% if needs_checking %}
       <p class="dash-warning">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.5h.01"/></svg>
-        <span><strong>{{ needs_checking }} member{{ needs_checking|pluralize }}</strong> {{ needs_checking|pluralize:"has,have" }} no date of birth and can't be ticked until it's added.</span>
+        <span>
+          <strong>{{ needs_checking }} member{{ needs_checking|pluralize }}</strong> {{ needs_checking|pluralize:"has,have" }} no date of birth and can't be ticked until it's added.
+          <a href="{% url 'voting:needs_checking' %}">Add {{ needs_checking|pluralize:"it,them" }}</a>
+        </span>
       </p>
     {% endif %}
   </div>

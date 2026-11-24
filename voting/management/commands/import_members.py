@@ -8,6 +8,8 @@ Import members from the church's CSV export, for the ACTIVE election.
   whose date of birth is missing or unreadable (they go on the "needs checking" list).
 - Safe to run again with a fresh export: matches people by their church id,
   so existing members are updated, never duplicated, and ticks are never touched.
+- A date of birth the Commissioner added on the "Needs checking" page is kept
+  when the export still has no readable date for that person.
 """
 from collections import Counter
 
@@ -63,6 +65,12 @@ class Command(BaseCommand):
         problems = []
         to_save = {}  # church_id -> cleaned fields (a dict, so repeated ids collapse)
 
+        # Dates of birth the Commissioner added by hand: church_id -> date
+        added_by_hand = dict(
+            Member.objects.filter(dob_added_at__isnull=False, date_of_birth__isnull=False)
+            .values_list("church_id", "date_of_birth")
+        )
+
         # ---- 2. Clean and check every row (nothing is saved yet) ----
         for line_no, row in rows:
             church_id = (row.get("id") or "").strip()
@@ -83,6 +91,18 @@ class Command(BaseCommand):
                 counts["unreadable_dob"] += 1
                 problems.append(f"Line {line_no} (id {church_id}): {error}, imported for checking")
 
+            # The church still has no readable date, but the Commissioner added one: keep it.
+            # The church has a date now: theirs wins, and the "added by hand" mark is cleared.
+            kept_hand_date = dob is None and church_id in added_by_hand
+            if kept_hand_date:
+                dob = added_by_hand[church_id]
+                counts["kept_hand_dob"] += 1
+            elif church_id in added_by_hand and dob != added_by_hand[church_id]:
+                problems.append(
+                    f"Line {line_no} (id {church_id}): church date {dob:%d/%m/%Y} replaces the one "
+                    f"added by hand ({added_by_hand[church_id]:%d/%m/%Y})"
+                )
+
             # Known date of birth outside the age rule: not a voter, don't store their data
             too_old = dob is not None and earliest is not None and dob < earliest
             too_young = dob is not None and latest is not None and dob > latest
@@ -102,13 +122,18 @@ class Command(BaseCommand):
                 counts["duplicate_id"] += 1
                 problems.append(f"Line {line_no}: id {church_id} appears more than once, later row used")
 
-            to_save[church_id] = {
+            fields = {
                 "full_name": name[:150],
                 "date_of_birth": dob,
                 "phone": phones[0] if phones else "",
                 "other_phones": " ".join(phones[1:])[:100],
                 "community": " ".join((row.get("community") or "").split())[:100],
             }
+            if not kept_hand_date:
+                # The date (or its absence) now comes from the church: not "added by hand"
+                fields["dob_added_by"] = None
+                fields["dob_added_at"] = None
+            to_save[church_id] = fields
 
         # ---- 3. Report ----
         with_dob = sum(1 for f in to_save.values() if f["date_of_birth"])
@@ -119,6 +144,7 @@ class Command(BaseCommand):
         self.stdout.write(f"File read: {len(rows)} rows (encoding: {encoding})")
         self.stdout.write(f"  Meet the age rule:                    {with_dob}")
         self.stdout.write(f"  No/unreadable date of birth (check):  {without_dob}")
+        self.stdout.write(f"  Kept dates added on Needs checking:   {counts['kept_hand_dob']}")
         self.stdout.write(f"  Skipped, outside the age rule:        {counts['skipped_outside_age']}")
         self.stdout.write(f"  Skipped, missing id or name:          {counts['skipped_no_id_or_name']}")
         self.stdout.write(f"  Phones damaged by Excel:              {counts['damaged_phone']}")

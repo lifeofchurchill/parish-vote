@@ -41,7 +41,10 @@ class MemberAdmin(admin.ModelAdmin):
     list_display = ("full_name", "church_id", "date_of_birth", "age", "community")
     # Search covers every phone number, not just the first one
     search_fields = ("full_name", "church_id", "phone", "other_phones")
-    list_filter = ("community",)
+    # "Date of birth: Empty" lists everyone the Needs checking page is about
+    list_filter = (("date_of_birth", admin.EmptyFieldListFilter), "community")
+    # Set only by the Needs checking page, so they can be read here but not typed in
+    readonly_fields = ("dob_added_by", "dob_added_at")
 
     def get_queryset(self, request):
         # Look up the active election ONCE per page, and attach its date to every row,

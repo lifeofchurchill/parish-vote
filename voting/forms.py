@@ -2,6 +2,7 @@
 Forms for the parish election pages.
 """
 from django import forms
+from django.utils import timezone
 
 
 class UndoTickForm(forms.Form):
@@ -24,3 +25,23 @@ class UndoTickForm(forms.Form):
             "max_length": "Keep it under 500 characters.",
         },
     )
+
+
+class DateOfBirthForm(forms.Form):
+    """A missing date of birth, added by the Commissioner on the Needs checking page."""
+
+    # On phones type="date" opens the date picker; it always sends the date as 2026-11-29
+    date_of_birth = forms.DateField(
+        error_messages={
+            "required": "Enter their date of birth.",
+            "invalid": "That isn't a real date. Pick it from the calendar, or type it as day/month/year.",
+        },
+    )
+
+    def clean_date_of_birth(self):
+        dob = self.cleaned_data["date_of_birth"]
+        if dob > timezone.localdate():
+            raise forms.ValidationError("That date is in the future.")
+        if dob.year < 1900:
+            raise forms.ValidationError("That date is too far back. Check the year.")
+        return dob

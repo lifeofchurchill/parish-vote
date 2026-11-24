@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Needs checking{% endblock %}
+
+{% block extra_head %}
+  {# Voter cards and status pills come from the check-in styles; the rest from commissioner.css #}
+  <link rel="stylesheet" href="{% static 'voting/checkin.css' %}">
+  <link rel="stylesheet" href="{% static 'voting/commissioner.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include "voting/commissioner_nav.html" with active="needs" %}
+
+<div class="comm-layout">
+
+  {# ===== Left: members with no date of birth ===== #}
+  <section>
+    <h1 class="page-heading">Needs checking</h1>
+    <p class="page-intro">
+      {% if election %}
+        These members have no readable date of birth in the church's records, so the system can't tell if they're {{ election.age_rule }}, and officials can't find them. Ask the person or the parish office, then add it here.
+      {% else %}
+        These members have no readable date of birth in the church's records. Ask the person or the parish office, then add it here.
+      {% endif %}
+    </p>
+
+    {% if missing %}
+      <p class="results-count">{{ missing|length }} member{{ missing|length|pluralize }} to check</p>
+      <ul class="results">
+        {% for member in missing %}
+          <li class="voter-card" id="member-{{ member.pk }}">
+            <div class="voter-head">
+              <span class="voter-initials" aria-hidden="true">{{ member.initials }}</span>
+              <h2 class="voter-name">{{ member.full_name }}</h2>
+              <span class="status status-check">No birth date</span>
+              {# Church id first: it's what the parish office will ask for #}
+              <p class="voter-meta">
+                <span>Church id {{ member.church_id }}</span>
+                {% if member.community %}<span>{{ member.community }}</span>{% endif %}
+                {% if member.masked_phone %}<span>{{ member.masked_phone }}</span>{% endif %}
+              </p>
+            </div>
+
+            {# One small form per person. The date picker can't go past today. #}
+            <form method="post" action="{% url 'voting:add_dob' member.pk %}" class="dob-form" novalidate>
+              {% csrf_token %}
+              <label for="dob-{{ member.pk }}">Date of birth</label>
+              <div class="dob-row">
+                <input type="date" name="date_of_birth" id="dob-{{ member.pk }}" class="dob-input"
+                       min="1900-01-01" max="{{ today|date:'Y-m-d' }}"
+                       {% if error_member_id == member.pk %}value="{{ error_form.date_of_birth.value|default:'' }}" aria-invalid="true" aria-describedby="dob-error-{{ member.pk }}"{% endif %}>
+                <button type="submit" class="btn btn-save">Save date</button>
+              </div>
+              {% if error_member_id == member.pk %}
+                <p class="field-error" id="dob-error-{{ member.pk }}" role="alert">{{ error_form.date_of_birth.errors.0 }}</p>
+              {% endif %}
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <section class="notice notice-inline">
+        <div class="notice-icon">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </div>
+        <h2>Nothing to check</h2>
+        <p>Every member has a date of birth, so everyone can be checked against the age rule.</p>
+      </section>
+    {% endif %}
+  </section>
+
+  {# ===== Right: dates added on this page ===== #}
+  <section class="comm-side">
+    <h2 class="dash-section-title">Dates added here</h2>
+    <p class="undo-log-intro">Kept when the church list is imported again, unless the church's record then has a date.</p>
+    {% if added %}
+      <ul class="results">
+        {% for member in added %}
+          <li class="voter-card" id="member-{{ member.pk }}">
+            <div class="voter-head">
+              <span class="voter-initials" aria-hidden="true">{{ member.initials }}</span>
+              <h2 class="voter-name">{{ member.full_name }}</h2>
+              {# What the date means for this election, in words #}
+              {% if election %}
+                {% if member.can_vote %}
+                  <span class="status status-ok">Can vote</span>
+                {% else %}
+                  <span class="status status-out">Outside age rule</span>
+                {% endif %}
+              {% endif %}
+              <p class="voter-meta">
+                <span>Born {{ member.date_of_birth|date:"j M Y" }}</span>
+                {% if member.age is not None %}<span>{{ member.age }} on election day</span>{% endif %}
+              </p>
+            </div>
+            <p class="added-by">Church id {{ member.church_id }}. Added by {{ member.added_by_name }}, {{ member.dob_added_at|date:"j M, g:i a" }}</p>
+
+            {# A typo? Open this to change the date (same form as above) #}
+            <details class="dob-change"{% if error_member_id == member.pk %} open{% endif %}>
+              <summary>Change date</summary>
+              <form method="post" action="{% url 'voting:add_dob' member.pk %}" class="dob-form" novalidate>
+                {% csrf_token %}
+                <label for="dob-{{ member.pk }}">Date of birth</label>
+                <div class="dob-row">
+                  <input type="date" name="date_of_birth" id="dob-{{ member.pk }}" class="dob-input"
+                         min="1900-01-01" max="{{ today|date:'Y-m-d' }}"
+                         {% if error_member_id == member.pk %}value="{{ error_form.date_of_birth.value|default:'' }}" aria-invalid="true" aria-describedby="dob-error-{{ member.pk }}"{% else %}value="{{ member.date_of_birth|date:'Y-m-d' }}"{% endif %}>
+                  <button type="submit" class="btn btn-save">Save date</button>
+                </div>
+                {% if error_member_id == member.pk %}
+                  <p class="field-error" id="dob-error-{{ member.pk }}" role="alert">{{ error_form.date_of_birth.errors.0 }}</p>
+                {% endif %}
+              </form>
+            </details>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="dash-empty">No dates have been added here yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% endblock %}

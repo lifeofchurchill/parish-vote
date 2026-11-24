@@ -170,6 +170,14 @@ class Member(models.Model):
     community = models.CharField(max_length=100, blank=True, default="")
     # Last time this row was created or updated by an import
     imported_at = models.DateTimeField(auto_now=True)
+    # Filled in when the Electoral Commissioner adds a missing date of birth on the
+    # "Needs checking" page: who and when. A re-import keeps that date, unless the
+    # church's export now has a readable one (the church's record wins).
+    dob_added_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        null=True, blank=True, related_name="dobs_added",
+    )
+    dob_added_at = models.DateTimeField(null=True, blank=True)
 
     # Lets us write Member.objects.eligible(election)
     objects = MemberQuerySet.as_manager()

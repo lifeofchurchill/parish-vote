@@ -1,5 +1,6 @@
 """
-Pages for the Electoral Commissioner: live turnout, and undoing a tick made by mistake.
+Pages for the Electoral Commissioner: live turnout, adding missing dates of birth,
+and undoing a tick made by mistake.
 
 Only staff accounts can open them (the "Staff status" box on the user in the admin).
 Officials who try get a "This page is for the Electoral Commissioner" page instead.
@@ -12,10 +13,11 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Count, Max, Q
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
-from .forms import UndoTickForm
+from .forms import DateOfBirthForm, UndoTickForm
 from .models import Election, Member, OrganizerProfile, TickUndo, VoteCheckIn, VotingSession
 # The same search rules as the check-in page, so searching feels the same everywhere
 from .views import MAX_RESULTS, MIN_NAME_LETTERS, MIN_PHONE_DIGITS, _initials, _who
@@ -163,6 +165,93 @@ def dashboard(request):
         "needs_checking": needs_checking,
         "updated_at": now,
     })
+
+
+# ---------- Needs checking: members with no date of birth ----------
+
+def _needs_checking_context(election):
+    """Everything the Needs checking page shows."""
+    # Still missing a date of birth
+    missing = list(Member.objects.needs_checking().order_by("full_name"))
+    for member in missing:
+        member.initials = _initials(member.full_name)
+
+    # Dates added on this page, newest first, with what each means for this election
+    added = list(
+        Member.objects.filter(dob_added_at__isnull=False)
+        .select_related("dob_added_by")
+        .order_by("-dob_added_at")
+    )
+    eligible_ids = set()
+    if election:
+        eligible_ids = set(
+            Member.objects.eligible(election)
+            .filter(pk__in=[m.pk for m in added])
+            .values_list("pk", flat=True)
+        )
+    for member in added:
+        member.initials = _initials(member.full_name)
+        member.age = member.age_on(election.date) if election else None
+        member.can_vote = member.pk in eligible_ids
+        member.added_by_name = _who(member.dob_added_by) if member.dob_added_by else "the admin"
+
+    return {
+        "role_label": ROLE_LABEL,
+        "election": election,
+        "missing": missing,
+        "added": added,
+        "today": timezone.localdate(),   # the latest date the date picker allows
+    }
+
+
+@commissioner_required
+def needs_checking(request):
+    """Members the system can't check against the age rule, and the dates added here."""
+    election = Election.objects.active()
+    return render(request, "voting/needs_checking.html", _needs_checking_context(election))
+
+
+@commissioner_required
+@require_POST
+def add_date_of_birth(request, member_id):
+    """Save a date of birth typed on the Needs checking page."""
+    election = Election.objects.active()
+    # Only members with no date, or one added here before. Dates from the church's
+    # records can't be changed from this page (the admin is the place for that).
+    member = get_object_or_404(
+        Member.objects.filter(Q(date_of_birth__isnull=True) | Q(dob_added_at__isnull=False)),
+        pk=member_id,
+    )
+
+    form = DateOfBirthForm(request.POST)
+    if not form.is_valid():
+        # Show the page again with the error on this person's card
+        context = _needs_checking_context(election)
+        context.update({"error_member_id": member.pk, "error_form": form})
+        return render(request, "voting/needs_checking.html", context)
+
+    member.date_of_birth = form.cleaned_data["date_of_birth"]
+    member.dob_added_by = request.user
+    member.dob_added_at = timezone.now()
+    member.save(update_fields=["date_of_birth", "dob_added_by", "dob_added_at"])
+
+    # Say straight away what the new date means for this election
+    name = member.full_name
+    if election is None:
+        messages.success(request, f"Saved {name}'s date of birth.")
+    elif Member.objects.eligible(election).filter(pk=member.pk).exists():
+        messages.success(
+            request,
+            f"Saved. {name} is {member.age_on(election.date)} on election day, "
+            f"so officials can now find and tick them.",
+        )
+    else:
+        messages.error(
+            request,
+            f"Saved, but {name} is {member.age_on(election.date)} on election day: outside the "
+            f"age rule ({election.age_rule}), so they can't vote in this election.",
+        )
+    return redirect("voting:needs_checking")
 
 
 # ---------- Undoing a tick ----------

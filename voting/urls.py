@@ -18,6 +18,9 @@ urlpatterns = [
 
     # Electoral Commissioner pages (staff accounts only)
     path("commissioner/", commissioner_views.dashboard, name="dashboard"),
+    # Members with no date of birth, and saving one for a member
+    path("commissioner/needs-checking/", commissioner_views.needs_checking, name="needs_checking"),
+    path("commissioner/needs-checking/<int:member_id>/", commissioner_views.add_date_of_birth, name="add_dob"),
     # Find a ticked voter, and the undo log
     path("commissioner/undo/", commissioner_views.undo_search, name="undo"),
     # Confirm screen (GET) and the actual undo (POST) for one tick

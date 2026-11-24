@@ -1,8 +1,8 @@
 /* =====================================================================
-   Electoral Commissioner pages: the tabs, the live turnout dashboard and
-   undoing a tick (later: needs-checking and the backup list). Loaded on top
-   of style.css and app.css (and checkin.css on the undo pages), so it uses
-   the parish green & gold tokens from app.css.
+   Electoral Commissioner pages: the tabs, the live turnout dashboard,
+   Needs checking and undoing a tick. Loaded on top of style.css and app.css
+   (and checkin.css on the Needs checking and undo pages), so it uses the
+   parish green & gold tokens from app.css.
    ===================================================================== */
 
 /* These pages are used on a laptop as well as a phone: allow more width */
@@ -35,10 +35,11 @@
 .comm-nav a:hover { background: var(--forest-100); }
 .comm-nav a[aria-current="page"] { color: #fff; background: var(--forest-900); }   /* the page you're on */
 .comm-nav svg { width: 18px; height: 18px; }
-/* Small phones: the tabs share the full width */
+/* Small phones: the tabs share the full width, words only */
 @media (max-width: 520px) {
   .comm-nav { display: flex; }
-  .comm-nav a { flex: 1; justify-content: center; padding: 0 10px; }
+  .comm-nav a { flex: 1; justify-content: center; padding: 0 8px; font-size: 14px; text-align: center; line-height: 1.15; }
+  .comm-nav svg { display: none; }
 }
 
 /* ===== Header: title and the live status ===== */
@@ -239,6 +240,13 @@
   border-radius: 18px;
 }
 .dash-warning svg { flex: none; width: 22px; height: 22px; margin-top: 1px; }
+.dash-warning a {
+  margin-left: 2px;
+  font-weight: 800;
+  color: inherit;
+  white-space: nowrap;
+  text-underline-offset: 3px;
+}
 
 /* ===== Centres and latest ticks ===== */
 .dash-grid { display: grid; gap: 28px; margin-top: 30px; }
@@ -492,9 +500,73 @@
 }
 
 /* =====================================================================
+   Needs checking and Undo a tick: two columns on laptops
+   ===================================================================== */
+.comm-layout,
+.undo-layout { display: grid; gap: 36px; }
+
+/* =====================================================================
+   Needs checking
+   ===================================================================== */
+/* Status pills, in words as well as colour */
+.status-check { color: #6B4806; background: #FBE9C2; }                 /* no date of birth yet */
+.status-ok { color: var(--forest-700); background: var(--forest-100); } /* can vote */
+.status-out { color: var(--ink-muted); background: var(--ivory-deep); } /* outside the age rule */
+
+/* The small date form inside each card */
+.dob-form { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--hairline); }
+.dob-form label { margin-bottom: 6px; font-size: 15px; }
+.dob-row { display: flex; gap: 10px; }
+.dob-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 54px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 17px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #CDD2C4;
+  border-radius: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.dob-input:focus { outline: none; border-color: var(--forest-700); box-shadow: 0 0 0 4px rgba(233, 169, 59, 0.4); }
+.dob-input[aria-invalid="true"] { border-color: var(--red); box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.12); }
+.btn-save {
+  flex: none;
+  min-height: 54px;
+  padding: 0 18px;
+  color: #fff;
+  background: var(--forest-700);
+  border-color: var(--forest-700);
+  border-radius: 14px;
+  white-space: nowrap;
+}
+.btn-save:hover { color: #fff; background: var(--forest-800); border-color: var(--forest-800); }
+
+/* Dates added here: who added it and when, and "Change date" */
+.added-by { margin: 12px 0 0; font-size: 14px; color: var(--ink-muted); }
+.dob-change summary {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--forest-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  list-style: none;
+  cursor: pointer;
+}
+.dob-change summary::-webkit-details-marker { display: none; }
+.dob-change[open] summary { margin-bottom: 4px; }
+
+/* "Nothing to check": the notice, sitting in the column instead of the middle of the page */
+.notice-inline { max-width: none; margin: 8px 0 0; }
+.notice h2 { margin: 0 0 10px; font-size: 26px; }
+
+/* =====================================================================
    Undo a tick
    ===================================================================== */
-.undo-layout { display: grid; gap: 36px; }
 .undo-log-intro { margin: -6px 0 14px; font-size: 15px; color: var(--ink-muted); }
 
 /* "Undo this tick" on a result: a red outline, one step softer than the solid red on the confirm screen */
@@ -609,7 +681,9 @@
 }
 @media (min-width: 960px) {
   .dash-grid { grid-template-columns: 1.1fr 1fr; align-items: start; }
-  /* Undo page: search on the left, the log on the right */
+  /* Needs checking and Undo: the main list on the left, the record on the right */
+  .comm-layout,
   .undo-layout { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 52px; align-items: start; }
+  .comm-side,
   .undo-log { padding-top: 18px; }
 }
