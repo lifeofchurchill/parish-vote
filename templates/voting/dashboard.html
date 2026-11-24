@@ -4,6 +4,8 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{% static 'voting/commissioner.css' %}">
+  {# The motion and live updates. "defer": runs once the page has loaded, without slowing it down. #}
+  <script src="{% static 'voting/dashboard.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -19,74 +21,130 @@
   </section>
 
 {% else %}
+{#  data-dashboard: dashboard.js looks for this.                                                #}
+{#  data-live="..." marks every number that can change; data-value holds it as a plain number.  #}
+{#  data-bar, data-slot and data-id mark the bars, the replaceable bits and each tick.          #}
+<div class="dash" data-dashboard data-recent-max="{{ recent_max }}">
+
   <header class="dash-header">
     <h1 class="page-heading">Live turnout</h1>
-    {# Updated time, and the page refreshes itself (script at the bottom) #}
-    <p class="dash-updated">
+    {# Live status: "Live" with a pulsing dot, or a warning when the connection drops #}
+    <p class="dash-status" data-status aria-live="polite">
       <span class="live-dot" aria-hidden="true"></span>
-      Refreshes every 30 seconds. Last updated {{ updated_at|time:"g:i:s a" }}
+      <span data-status-text>Live</span>
+      <span class="dash-updated">Updated <time data-slot="updated">{{ updated_at|time:"g:i:s a" }}</time></span>
     </p>
   </header>
 
-  {# ===== Headline: how many have voted ===== #}
+  {# ===== Headline: the rose window gauge and the big numbers ===== #}
   <section class="turnout-panel">
-    {# A ring that fills to the turnout percentage (pathLength="100" makes the maths easy) #}
-    <div class="turnout-ring" role="img" aria-label="{{ percent }}% turnout">
-      <svg viewBox="0 0 120 120" aria-hidden="true">
-        <circle class="ring-track" cx="60" cy="60" r="52" pathLength="100"/>
-        <circle class="ring-fill" cx="60" cy="60" r="52" pathLength="100"
-                stroke-dasharray="{{ percent }} 100"/>
-      </svg>
-      <span class="ring-label">{{ percent }}<small>%</small></span>
+    <div class="turnout-rose">
+      {% include "voting/turnout_rose.svg" %}
+      {# The percentage, in the middle of the window #}
+      <p class="rose-label" aria-hidden="true">
+        <span class="rose-percent"><span data-live="percent" data-value="{{ percent }}">{{ percent }}</span><small>%</small></span>
+        <span class="rose-caption">turnout</span>
+      </p>
     </div>
 
-    <dl class="turnout-numbers">
-      <div class="turnout-main">
-        <dt>Voted</dt>
-        <dd>{{ voted }}</dd>
-      </div>
-      <div>
-        <dt>Eligible</dt>
-        <dd>{{ eligible }}</dd>
-      </div>
-      <div>
-        <dt>Still to vote</dt>
-        <dd>{{ remaining }}</dd>
-      </div>
-    </dl>
+    <div class="turnout-figures">
+      <p class="turnout-voted">
+        <span class="turnout-label">Voted so far</span>
+        <span class="turnout-number" data-live="voted" data-value="{{ voted }}">{{ voted }}</span>
+        <span class="turnout-of">of <strong data-live="eligible" data-value="{{ eligible }}">{{ eligible }}</strong> eligible members</span>
+      </p>
+      <dl class="turnout-stats">
+        <div>
+          <dt>Still to vote</dt>
+          <dd data-live="remaining" data-value="{{ remaining }}">{{ remaining }}</dd>
+        </div>
+        <div class="turnout-pace">
+          <dt>In the last {{ pace_minutes }} minutes</dt>
+          <dd><span data-live="pace" data-value="{{ recent_pace }}">{{ recent_pace }}</span> <small>ticked</small></dd>
+        </div>
+      </dl>
+    </div>
   </section>
 
   {# Members with no date of birth: can't be checked, so they can't vote until fixed #}
-  {% if needs_checking %}
-    <p class="dash-warning">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.5h.01"/></svg>
-      <span><strong>{{ needs_checking }} member{{ needs_checking|pluralize }}</strong> {{ needs_checking|pluralize:"has,have" }} no date of birth and can't be ticked until it's added.</span>
-    </p>
-  {% endif %}
+  <div data-slot="warning">
+    {% if needs_checking %}
+      <p class="dash-warning">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.5h.01"/></svg>
+        <span><strong>{{ needs_checking }} member{{ needs_checking|pluralize }}</strong> {{ needs_checking|pluralize:"has,have" }} no date of birth and can't be ticked until it's added.</span>
+      </p>
+    {% endif %}
+  </div>
 
   <div class="dash-grid">
-    {# ===== Each polling centre, with its sessions ===== #}
+    {# ===== Each polling centre: its sessions, and its officials ===== #}
     <section class="dash-centres">
       <h2 class="dash-section-title">By centre</h2>
       {% for centre in centres %}
         <article class="centre-card">
           <header class="centre-head">
-            <h3>{{ centre.name }}</h3>
-            <p class="centre-total"><span>{{ centre.total }}</span> voted</p>
+            {# The name is a button: tap the top of the card to show only this centre's ticks #}
+            <h3><button type="button" class="centre-pick" data-filter="{{ centre.pk }}" aria-pressed="false">{{ centre.name }}</button></h3>
+            <p class="centre-total"><span data-live="centre-{{ centre.pk }}" data-value="{{ centre.total }}">{{ centre.total }}</span> voted</p>
+            {# Hints, shown by CSS: on hover ("Show...") and once chosen ("Showing...") #}
+            <span class="centre-hint" aria-hidden="true">Show its latest ticks</span>
+            <span class="centre-picked" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+              Showing its latest ticks
+            </span>
           </header>
+
           <ul class="session-bars">
             {% for session in centre.sessions %}
               <li>
                 <div class="session-bar-text">
                   <span>{{ session.label }}</span>
-                  <strong>{{ session.ticked }}</strong>
+                  <strong data-live="session-{{ session.pk }}" data-value="{{ session.ticked }}">{{ session.ticked }}</strong>
                 </div>
                 {# Bar length: this session compared with the busiest session (set in the view). #}
                 {# Drawn as a tiny SVG so the length is a plain attribute, not CSS inside a style="". #}
-                <svg class="bar" aria-hidden="true"><rect width="{{ session.bar }}%" height="100%" rx="5"/></svg>
+                <svg class="bar" aria-hidden="true"><rect width="{{ session.bar }}%" height="100%" rx="5" data-bar="session-{{ session.pk }}"/></svg>
               </li>
             {% endfor %}
           </ul>
+
+          {# Officials at this centre: opens and closes (a built-in <details>, so it works without JavaScript) #}
+          <details class="centre-officials">
+            <summary>
+              <span class="officials-summary" data-slot="summary-{{ centre.pk }}">
+                {% with count=centre.officials|length %}
+                  {% if not count %}
+                    <strong>No officials</strong> <span>assigned yet</span>
+                  {% else %}
+                    <strong>{{ count }} official{{ count|pluralize }}</strong><span>, {% if centre.last_tick %}last tick {{ centre.last_tick|time:"g:i a" }}{% else %}no ticks yet{% endif %}</span>
+                  {% endif %}
+                {% endwith %}
+              </span>
+              <span class="summary-chevron" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg>
+              </span>
+            </summary>
+            <ul class="official-list" data-slot="officials-{{ centre.pk }}">
+              {% for official in centre.officials %}
+                <li class="official is-{{ official.status }}">
+                  {# Coloured dot: green = ticked someone in the last few minutes, gold = quiet, grey = none yet #}
+                  <span class="official-dot" aria-hidden="true"></span>
+                  <span class="official-text">
+                    <strong>{{ official.name }}</strong>
+                    <span>
+                      {% if official.status == "idle" %}No ticks yet
+                      {% elif official.status == "active" %}Active, last tick {{ official.last_tick|time:"g:i a" }}
+                      {% elif official.quiet_minutes < 60 %}Quiet for {{ official.quiet_minutes }} min
+                      {% else %}Quiet since {{ official.last_tick|time:"g:i a" }}{% endif %}
+                    </span>
+                  </span>
+                  <span class="official-count"><span>{{ official.ticked }}</span> ticked</span>
+                </li>
+              {% empty %}
+                <li class="official-none">No officials are assigned here. Add them in the admin under Organizer profiles.</li>
+              {% endfor %}
+            </ul>
+          </details>
         </article>
       {% empty %}
         <p class="dash-empty">No voting sessions are set up for this election yet.</p>
@@ -94,33 +152,41 @@
     </section>
 
     {# ===== The latest ticks ===== #}
-    <section class="dash-recent">
+    <section class="dash-recent" id="latest-ticks">
       <h2 class="dash-section-title">Latest ticks</h2>
-      {% if recent %}
-        <ol class="recent-list">
-          {% for tick in recent %}
-            <li>
-              <span class="recent-time">{{ tick.ticked_at|time:"g:i a" }}</span>
-              <span class="recent-body">
-                <strong>{{ tick.member.full_name }}</strong>
-                <span>{{ tick.session.centre.name }}, {{ tick.session.label }}</span>
-                <span>by {{ tick.ticked_by.get_full_name|default:tick.ticked_by.username }}</span>
-              </span>
-            </li>
-          {% endfor %}
-        </ol>
-      {% else %}
-        <p class="dash-empty">No one has been ticked yet. Ticks will appear here as they happen.</p>
-      {% endif %}
+
+      {# Filter buttons. Hidden until dashboard.js is running, because they need it to work. #}
+      <div class="tick-filter" role="group" aria-label="Show ticks from" data-tick-filter hidden>
+        <button type="button" data-filter="all" aria-pressed="true">All</button>
+        {% for centre in centres %}
+          <button type="button" data-filter="{{ centre.pk }}" aria-pressed="false" title="{{ centre.name }}">{{ centre.short_name }}</button>
+        {% endfor %}
+      </div>
+
+      <div data-slot="recent">
+        {% if recent %}
+          <ol class="recent-list">
+            {% for tick in recent %}
+              {# data-centre: which centre, for the filter. Ticks that are only here for the filter start hidden. #}
+              <li data-id="{{ tick.pk }}" data-centre="{{ tick.session.centre.pk }}"{% if not tick.in_overall %} hidden{% endif %}>
+                <span class="recent-time">{{ tick.ticked_at|time:"g:i a" }}</span>
+                <span class="recent-body">
+                  <strong>{{ tick.member.full_name }}</strong>
+                  <span>{{ tick.session.centre.name }}, {{ tick.session.label }}</span>
+                  <span>by {{ tick.ticked_by.get_full_name|default:tick.ticked_by.username }}</span>
+                </span>
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <p class="dash-empty">No one has been ticked yet. Ticks will appear here as they happen.</p>
+        {% endif %}
+      </div>
+      {# Shown by dashboard.js when a centre is chosen but has no ticks yet #}
+      <p class="dash-empty" data-filter-empty hidden>No one has been ticked at this centre yet.</p>
     </section>
   </div>
-
-  <script>
-    // Reload every 30 seconds for fresh numbers, but only while this tab is on screen
-    setInterval(() => {
-      if (document.visibilityState === "visible") location.reload();
-    }, 30000);
-  </script>
+</div>
 {% endif %}
 
 {% endblock %}

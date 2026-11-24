@@ -1,94 +1,196 @@
 /* =====================================================================
-   Electoral Commissioner pages: live turnout dashboard (and, later,
+   Electoral Commissioner pages: the live turnout dashboard (and, later,
    undo, needs-checking and the backup list). Loaded on top of style.css
-   and app.css, so it uses the same colours and fonts.
+   and app.css, so it uses the parish green & gold tokens from app.css.
    ===================================================================== */
 
 /* These pages are used on a laptop as well as a phone: allow more width */
-.app-main { max-width: 1080px; }
+.app-main { max-width: 1120px; }
 
-/* ===== Header ===== */
-.dash-header { margin-bottom: 18px; }
-.dash-header .page-heading { margin-bottom: 4px; }
-.dash-updated {
+/* ===== Header: title and the live status ===== */
+.dash-header {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0;
-  font-size: 15px;
-  color: var(--muted);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-bottom: 22px;
 }
-/* Same pulsing green dot as the officials' live panel */
+.dash-header .page-heading { margin: 0; }
+
+/* "Live · Updated 9:53:12 a.m." in a white pill */
+.dash-status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+  padding: 8px 15px 8px 13px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--forest-700);
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  box-shadow: var(--shadow-card);
+}
+.dash-updated { font-weight: 500; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+/* The pulsing leaf-green dot */
 .live-dot {
   flex: none;
   width: 9px;
   height: 9px;
-  margin-top: 0.55em;          /* lines up with the first line of text */
-  background: #22A55A;
+  background: var(--leaf);
   border-radius: 50%;
 }
 @media (prefers-reduced-motion: no-preference) {
   .live-dot { animation: live-pulse 2s ease-out infinite; }
 }
 @keyframes live-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(34, 165, 90, 0.55); }
-  70%  { box-shadow: 0 0 0 9px rgba(34, 165, 90, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(34, 165, 90, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(124, 194, 67, 0.6); }
+  70%  { box-shadow: 0 0 0 9px rgba(124, 194, 67, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(124, 194, 67, 0); }
 }
+/* No connection: red text, grey still dot */
+.dash-status.is-offline { color: #9A2A20; }
+.dash-status.is-offline .live-dot { background: #BDB6A3; animation: none; }
 
-/* ===== Headline turnout panel ===== */
+/* ===== Headline panel ===== */
 .turnout-panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 22px;
-  padding: 22px;
+  justify-items: center;
+  gap: 26px;
+  padding: 30px 22px 26px;
   color: #fff;
   background:
-    radial-gradient(ellipse 60% 90% at 100% 0%, rgba(233, 169, 59, 0.2), transparent 60%),
+    radial-gradient(ellipse 60% 80% at 100% 0%, rgba(124, 194, 67, 0.12), transparent 60%),
     var(--grain),
-    var(--violet-900);
-  border-radius: 28px;
-  box-shadow: 0 30px 60px -34px rgba(36, 17, 47, 0.8);
+    var(--forest-900);
+  border-radius: 32px;
+  box-shadow: var(--shadow-panel);
 }
 
-/* The ring: a grey track and a gold arc on top, starting at 12 o'clock */
-.turnout-ring { position: relative; width: 132px; height: 132px; }
-.turnout-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring-track, .ring-fill { fill: none; stroke-width: 11; }
-.ring-track { stroke: rgba(255, 255, 255, 0.12); }
-.ring-fill { stroke: var(--candle); stroke-linecap: round; }
-.ring-label {
+/* ===== The rose window gauge ===== */
+.turnout-rose {
+  position: relative;
+  width: min(100%, 260px);
+  aspect-ratio: 1;
+  container-type: inline-size;   /* lets the % inside scale with the window (the "cqi" units below) */
+}
+/* Candlelight behind the window */
+.turnout-rose::before {
+  content: "";
+  position: absolute;
+  inset: -22%;
+  z-index: -1;
+  background: radial-gradient(circle, rgba(233, 169, 59, 0.3), rgba(233, 169, 59, 0.08) 45%, transparent 68%);
+}
+.rose { display: block; width: 100%; height: 100%; overflow: visible; }
+
+/* Rims, tracery and the centre medallion: thin gold lines */
+.rose-rim { fill: none; stroke: rgba(245, 217, 154, 0.6); stroke-width: 0.8; }
+.rose-rim-inner { stroke: rgba(245, 217, 154, 0.22); }
+.rose-roundels circle { fill: rgba(245, 217, 154, 0.5); }
+.rose-ring { fill: none; stroke: rgba(245, 217, 154, 0.55); stroke-width: 0.8; }
+.rose-medallion { fill: var(--forest-950); stroke: rgba(245, 217, 154, 0.2); stroke-width: 0.6; }
+
+/* Unlit glass: dark, with a faint gold outline */
+.rose-glass use { fill: rgba(255, 255, 255, 0.04); stroke: rgba(245, 217, 154, 0.26); stroke-width: 0.7; }
+
+/* Lit glass (the gold gradient is set in the SVG) with a bright edge */
+.rose-light-panes { stroke: #FCE7B4; stroke-width: 0.5; }
+
+/* A pane that has just filled: a white-gold flare that settles (added by dashboard.js) */
+.rose-light-panes use.is-new { animation: pane-flare 1.3s cubic-bezier(0.2, 0.7, 0.2, 1); }
+@keyframes pane-flare {
+  0%   { stroke: #FFFFFF; stroke-width: 5; }
+  100% { stroke: #FCE7B4; stroke-width: 0.5; }
+}
+
+/* A soft light that travels slowly round the lit glass, like sun moving across a window */
+.rose-sheen { transform-box: view-box; transform-origin: 0 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .rose-sheen { animation: sheen-orbit 8s linear infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rose-sheen { display: none; }
+}
+@keyframes sheen-orbit {
+  to { transform: rotate(360deg); }
+}
+
+/* The % in the middle of the window */
+.rose-label {
   position: absolute;
   inset: 0;
-  display: flex;               /* number and % side by side, centred in the ring */
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 38px;
-  color: #FFF6E6;
-}
-.ring-label small { font-size: 0.5em; }
-
-/* The three numbers next to the ring */
-.turnout-numbers {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 20px;
+  place-content: center;
+  justify-items: center;
   margin: 0;
+  pointer-events: none;
 }
-.turnout-numbers dt { font-size: 14px; color: var(--tracery); }
-.turnout-numbers dd {
-  margin: 2px 0 0;
+.rose-percent {
   font-family: var(--font-display);
-  font-size: 34px;
+  font-size: 44px;
+  font-size: 17cqi;                /* 17% of the window's width */
   line-height: 1;
-  color: #FFF6E6;
+  letter-spacing: -0.03em;
+  color: #FFF8E8;
   font-variant-numeric: tabular-nums;
 }
-/* "Voted" is the big one, in gold, across the full width */
-.turnout-main { grid-column: 1 / -1; }
-.turnout-main dd { font-size: 56px; color: var(--candle-light); }
+.rose-percent small { font-size: 0.45em; margin-left: 0.04em; color: var(--gold-light); }
+.rose-caption { margin-top: 2px; font-size: 13px; font-size: 5cqi; font-weight: 700; color: var(--sage); }
+
+/* ===== The big numbers next to the window ===== */
+.turnout-figures { width: 100%; }
+.turnout-voted { display: grid; margin: 0; }
+.turnout-label { font-size: 15px; font-weight: 700; color: var(--sage); }
+.turnout-number {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 96px;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--gold-light);
+  font-variant-numeric: tabular-nums;
+}
+.turnout-of { margin-top: 10px; font-size: 18px; color: #E3ECDD; }
+.turnout-of strong { font-weight: 800; color: #fff; }
+
+.turnout-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid rgba(245, 217, 154, 0.18);
+}
+/* Label on top, number at the bottom, so the two numbers line up even if a label wraps */
+.turnout-stats > div { display: grid; grid-template-rows: 1fr auto; }
+.turnout-stats > div + div { padding-left: 18px; border-left: 1px solid rgba(245, 217, 154, 0.18); }
+.turnout-stats dt { font-size: 14px; font-weight: 600; color: var(--sage); }
+.turnout-stats dd {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #FFF8E8;
+  font-variant-numeric: tabular-nums;
+}
+/* The pace in leaf green: it's the "live" number */
+.turnout-pace dd { color: var(--leaf-light); }
+.turnout-pace small { font-family: var(--font-body); font-size: 15px; font-weight: 700; letter-spacing: 0; color: var(--sage); }
+
+/* A number that just changed glows gold for a moment (added by dashboard.js) */
+.is-bumped { animation: bump 1.6s ease-out; }
+@keyframes bump {
+  0%, 25% { text-shadow: 0 0 18px rgba(233, 169, 59, 0.95); }
+  100%    { text-shadow: 0 0 0 rgba(233, 169, 59, 0); }
+}
 
 /* ===== Warning: members missing a date of birth ===== */
 .dash-warning {
@@ -100,88 +202,274 @@
   color: #5A3A05;
   background: #FDF3DC;
   border: 1px solid #F2D399;
-  border-radius: 16px;
+  border-radius: 18px;
 }
 .dash-warning svg { flex: none; width: 22px; height: 22px; margin-top: 1px; }
 
-/* ===== Two columns on laptops: centres | latest ticks ===== */
-.dash-grid { display: grid; gap: 24px; margin-top: 26px; }
-.dash-section-title { margin: 0 0 12px; font-size: 24px; }
-.dash-empty { margin: 0; padding: 18px; color: var(--muted); background: #fff; border: 1px dashed #D6CCE0; border-radius: 16px; }
-
-/* ===== One card per centre ===== */
-.dash-centres { display: grid; gap: 14px; align-content: start; }
-.dash-centres .dash-section-title { margin-bottom: 0; }
-.centre-card {
-  padding: 18px 20px 20px;
+/* ===== Centres and latest ticks ===== */
+.dash-grid { display: grid; gap: 28px; margin-top: 30px; }
+.dash-section-title { margin: 0 0 14px; font-size: 28px; letter-spacing: -0.015em; }
+.dash-empty {
+  margin: 0;
+  padding: 18px;
+  color: var(--ink-muted);
   background: #fff;
-  border: 1px solid #E6E0EC;
-  border-radius: 22px;
-  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.04), 0 16px 32px -26px rgba(36, 17, 47, 0.5);
+  border: 1px dashed #D3CDBB;
+  border-radius: 18px;
 }
+
+/* One card per centre */
+.centre-card {
+  padding: 20px 22px 18px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}
+/* Hovering the top of the card: it lifts a little, to say "you can tap this" */
+.centre-card:has(.centre-pick:hover) {
+  transform: translateY(-2px);
+  border-color: #CBD3C3;
+  box-shadow: 0 1px 2px rgba(12, 58, 30, 0.06), 0 28px 46px -28px rgba(12, 58, 30, 0.6);
+}
+/* The chosen centre (its ticks are showing in "Latest ticks"): a gold edge */
+.centre-card:has(.centre-pick[aria-pressed="true"]) {
+  background: #FFFDF6;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold), 0 24px 44px -30px rgba(185, 126, 23, 0.75);
+}
+
 .centre-head {
+  position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #EEE8F3;
+  gap: 4px 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--hairline);
 }
-.centre-head h3 { margin: 0; font-size: 18px; line-height: 1.3; }
-.centre-total { margin: 0; white-space: nowrap; color: var(--muted); }
+.centre-head h3 {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+/* The centre's name is a button that looks like a heading.
+   Its ::after stretches over the whole top of the card, so tapping anywhere there works. */
+.centre-pick {
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.centre-pick::after {
+  content: "";
+  position: absolute;
+  inset: -10px -12px 0;
+  border-radius: 16px;
+}
+.centre-pick:focus-visible { outline: none; }
+.centre-pick:focus-visible::after { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.centre-total { margin: 0; white-space: nowrap; font-size: 15px; font-weight: 600; color: var(--ink-muted); }
 .centre-total span {
   font-family: var(--font-display);
-  font-size: 30px;
-  color: var(--violet-700);
+  font-size: 36px;
+  letter-spacing: -0.02em;
+  color: var(--forest-700);
   font-variant-numeric: tabular-nums;
 }
 
+/* "Show its latest ticks" on hover, "Showing its latest ticks" once chosen */
+.centre-hint,
+.centre-picked {
+  display: none;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.centre-hint { color: var(--forest-700); }
+.centre-picked { color: var(--gold-ink); }
+.centre-picked svg { width: 15px; height: 15px; stroke-width: 2.4; }
+@media (hover: hover) {
+  .centre-card:has(.centre-pick:hover):not(:has(.centre-pick[aria-pressed="true"])) .centre-hint { display: flex; }
+}
+.centre-card:has(.centre-pick[aria-pressed="true"]) .centre-picked { display: flex; }
+
 /* Each session: label and count, with a bar underneath */
-.session-bars { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
-.session-bar-text { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-size: 16px; }
-.session-bar-text strong { font-variant-numeric: tabular-nums; }
-/* The bar is a small SVG: the svg is the pale track, the rounded rect is the violet fill */
+.session-bars { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; }
+.session-bar-text { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 7px; font-size: 16px; }
+.session-bar-text strong { color: var(--forest-700); font-variant-numeric: tabular-nums; }
+/* The bar is a small SVG: the svg is the pale track, the rounded rect is the green fill */
 .bar {
   display: block;
   width: 100%;
   height: 10px;
-  background: var(--violet-100);
+  background: var(--forest-100);
   border-radius: 999px;
 }
-.bar rect { fill: var(--violet-700); }
+.bar rect { fill: var(--forest-700); }
 
-/* ===== Latest ticks ===== */
+/* ===== Officials at a centre (opens and closes) ===== */
+.centre-officials {
+  margin-top: 18px;
+  border-top: 1px solid var(--hairline);
+  interpolate-size: allow-keywords;    /* lets the browser animate opening to "auto" height */
+}
+.centre-officials summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0 2px;
+  font-size: 15px;
+  color: var(--ink-muted);
+  list-style: none;                    /* no default triangle; we draw our own chevron */
+  cursor: pointer;
+}
+.centre-officials summary::-webkit-details-marker { display: none; }
+.officials-summary strong { color: var(--ink); }
+.summary-chevron {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  color: var(--forest-700);
+  background: var(--forest-100);
+  border-radius: 50%;
+  transition: transform 0.25s, background 0.15s;
+}
+.summary-chevron svg { width: 18px; height: 18px; }
+.centre-officials summary:hover .summary-chevron { background: #DAE6D5; }
+.centre-officials[open] .summary-chevron { transform: rotate(180deg); }
+
+/* Smooth open and close, in browsers that support it (others just open instantly) */
+@supports selector(::details-content) {
+  .centre-officials::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size 0.3s ease, content-visibility 0.3s allow-discrete;
+  }
+  .centre-officials[open]::details-content { block-size: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .centre-officials::details-content,
+  .summary-chevron { transition: none; }
+}
+
+.official-list { display: grid; gap: 6px; margin: 12px 0 4px; padding: 0; list-style: none; }
+.official {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--ivory);
+  border-radius: 14px;
+}
+/* The dot: green = ticked someone in the last few minutes, gold = gone quiet, grey = none yet */
+.official-dot { width: 10px; height: 10px; background: #BDB6A3; border-radius: 50%; }
+.official.is-active .official-dot { background: var(--leaf); box-shadow: 0 0 0 4px rgba(124, 194, 67, 0.22); }
+.official.is-quiet .official-dot { background: var(--gold); box-shadow: 0 0 0 4px rgba(233, 169, 59, 0.22); }
+.official-text { min-width: 0; }
+.official-text strong { display: block; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.official-text span { display: block; font-size: 13px; color: var(--ink-muted); }
+.official.is-quiet .official-text span { font-weight: 700; color: var(--gold-ink); }   /* worth a phone call */
+.official-count { font-size: 13px; color: var(--ink-muted); white-space: nowrap; }
+.official-count span {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--forest-700);
+  font-variant-numeric: tabular-nums;
+}
+.official-none { padding: 10px 14px; font-size: 14px; color: var(--ink-muted); background: var(--ivory); border-radius: 14px; }
+
+/* ===== Filter buttons above "Latest ticks" ===== */
+/* When a tap scrolls the page here (on phones), leave a little room above the heading */
+#latest-ticks { scroll-margin-top: 16px; }
+.tick-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.tick-filter[hidden] { display: none; }
+.tick-filter button {
+  min-height: 40px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--forest-700);
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.tick-filter button:hover { background: #FBFAF4; border-color: #CBD3C3; }
+.tick-filter button[aria-pressed="true"] { color: #fff; background: var(--forest-700); border-color: var(--forest-700); }
+
+/* Latest ticks */
 .recent-list {
   margin: 0;
   padding: 6px 0;
   list-style: none;
   background: #fff;
-  border: 1px solid #E6E0EC;
-  border-radius: 22px;
-  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.04), 0 16px 32px -26px rgba(36, 17, 47, 0.5);
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 .recent-list li {
   display: grid;
-  grid-template-columns: 76px 1fr;
+  grid-template-columns: 78px 1fr;
   gap: 12px;
-  padding: 12px 18px;
+  padding: 13px 20px;
+  transition: background 0.15s;
 }
-.recent-list li + li { border-top: 1px solid #F1ECF5; }
-.recent-time { font-size: 15px; font-weight: 700; color: var(--violet-700); font-variant-numeric: tabular-nums; }
+.recent-list li[hidden] { display: none; }          /* filtered out ("display: grid" would override hidden) */
+.recent-list li:not([hidden]) ~ li:not([hidden]) { border-top: 1px solid #F0ECE0; }
+.recent-list li:hover { background: #FBFAF4; }
+.recent-time { font-size: 15px; font-weight: 800; color: var(--forest-700); font-variant-numeric: tabular-nums; }
 .recent-body { display: grid; gap: 1px; min-width: 0; }
 .recent-body strong { font-size: 16px; overflow-wrap: anywhere; }
-.recent-body span { font-size: 14px; color: var(--muted); }
+.recent-body span { font-size: 14px; color: var(--ink-muted); }
+
+/* A tick that just arrived slides in with a leaf-green wash that fades (added by dashboard.js) */
+@media (prefers-reduced-motion: no-preference) {
+  .recent-list li.is-new { animation: tick-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), tick-wash 4s ease-out; }
+}
+@keyframes tick-in {
+  from { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes tick-wash {
+  0%, 30% { background: rgba(124, 194, 67, 0.18); }
+  100%    { background: rgba(124, 194, 67, 0); }
+}
 
 /* ===== Laptops ===== */
 @media (min-width: 760px) {
-  .turnout-panel { grid-template-columns: auto 1fr; padding: 30px 34px; gap: 34px; }
-  .turnout-ring { width: 168px; height: 168px; }
-  .ring-label { font-size: 48px; }
-  .turnout-numbers { grid-template-columns: 1.4fr 1fr 1fr; align-items: end; }
-  .turnout-main { grid-column: auto; }
-  .turnout-main dd { font-size: 72px; }
-  .turnout-numbers dd { font-size: 40px; }
+  .turnout-panel {
+    grid-template-columns: auto 1fr;
+    justify-items: start;
+    align-items: center;
+    gap: 52px;
+    padding: 38px 48px;
+  }
+  .turnout-rose { width: 290px; }
+  .turnout-number { font-size: 132px; }
+  .turnout-stats { max-width: 520px; }
+  .turnout-stats dd { font-size: 46px; }
 }
 @media (min-width: 960px) {
   .dash-grid { grid-template-columns: 1.1fr 1fr; align-items: start; }

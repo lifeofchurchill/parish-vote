@@ -1,15 +1,57 @@
 /* =====================================================================
-   App shell for signed-in pages: the violet app bar, page layout,
-   page headings and notices. Loaded by base.html on every page that
-   uses the app bar (not by the sign-in page, which has its own layout).
+   App shell for signed-in pages: the app bar, page layout, headings,
+   notices and messages. base.html loads this on every page; everything
+   here is scoped to the app bar and .app-main, so the sign-in page keeps
+   its own violet look.
+
+   Colours: parish green and gold, taken from the parish emblem
+   (its deep green ring and leaf-green highlights) with candle gold.
    ===================================================================== */
 
-/* ===== Page layout ===== */
+/* ===== Design tokens for the signed-in pages ===== */
+:root {
+  --forest-950: #06200F;   /* deepest green: shadows */
+  --forest-900: #0C3A1E;   /* app bar and the big dark panels (the emblem's deep green) */
+  --forest-800: #12482A;   /* hover on dark buttons */
+  --forest-700: #1A5C35;   /* buttons, bars, links */
+  --forest-100: #E6EEE3;   /* pale green tint: chips, tracks, icon circles */
+  --leaf:       #7CC243;   /* the emblem's leaf green: anything "live" or "new" */
+  --leaf-light: #C9E8A6;
+  --gold:       #E9A93B;   /* candle gold: the main accent and the Tick button */
+  --gold-light: #F5D99A;   /* gold for numbers and text on dark green */
+  --gold-ink:   #7A5208;   /* gold dark enough to read on a light background */
+  --ivory:      #F8F6EE;   /* page background */
+  --ivory-deep: #EFEBDD;
+  --ink:        #0F2418;   /* main text: green-black */
+  --ink-muted:  #56604F;   /* secondary text */
+  --sage:       #B7CBB0;   /* secondary text on dark green */
+  --hairline:   #E4DFCF;   /* card borders and dividers */
+
+  /* Shadows tinted green, so cards sit on the page instead of floating in grey */
+  --shadow-card: 0 1px 2px rgba(12, 58, 30, 0.05), 0 18px 36px -28px rgba(12, 58, 30, 0.55);
+  --shadow-panel: 0 34px 70px -38px rgba(6, 32, 15, 0.85);
+}
+
+/* ===== Page ===== */
+/* Ivory background and green-black text on pages with the app bar (not the sign-in page) */
+body:has(> .app-main) { background: var(--ivory); color: var(--ink); }
+
 .app-main {
   max-width: 760px;
   margin: 0 auto;
-  padding: 28px 18px 56px;
+  padding: 30px 18px 64px;
+  color: var(--ink);
 }
+
+/* Shared headings, buttons and inputs from style.css, recoloured for these pages.
+   :where() adds no specificity, so page stylesheets (checkin.css etc.) can still
+   style their own buttons and headings without a fight. */
+:where(.app-main) :is(h1, h2, h3) { color: var(--ink); }
+:where(.app-main) .btn { color: var(--forest-700); border-color: var(--forest-700); }
+:where(.app-main) .btn:hover { background: var(--forest-100); }
+:where(.app-main) input:is([type="text"], [type="search"]) { color: var(--ink); border-color: #A9B0A0; }
+:where(.app-main) input:focus { border-color: var(--forest-700); box-shadow: 0 0 0 4px rgba(233, 169, 59, 0.4); }
+:where(.app-main) input::placeholder { color: #7D8676; }
 
 /* ===== App bar ===== */
 .appbar {
@@ -18,10 +60,11 @@
   overflow: hidden;
   color: #fff;
   background:
-    radial-gradient(ellipse 60% 120% at 100% 0%, rgba(233, 169, 59, 0.16), transparent 60%),
+    radial-gradient(ellipse 55% 140% at 100% 0%, rgba(233, 169, 59, 0.2), transparent 60%),
+    radial-gradient(ellipse 40% 120% at 0% 100%, rgba(124, 194, 67, 0.12), transparent 70%),
     var(--grain),
-    var(--violet-900);
-  border-bottom: 1px solid rgba(233, 169, 59, 0.55);   /* hairline of candle gold */
+    var(--forest-900);
+  border-bottom: 1px solid rgba(233, 169, 59, 0.6);    /* hairline of candle gold */
 }
 .appbar-inner {
   position: relative;
@@ -36,18 +79,21 @@
   gap: 14px 24px;
 }
 
-/* A quiet, static rose window in the bar's right corner (same SVG as the sign-in page) */
+/* A quiet, static rose window in the bar's right corner, drawn in gold */
 .appbar-rose .rose-window {
   width: 560px;
   top: -300px;
   right: -170px;
-  opacity: 0.55;
+  opacity: 0.5;
 }
 .appbar-rose .rose-window .rw,
 .appbar-rose .rose-window .rw[class*="glass-"] {
-  animation: none;             /* only the sign-in page animates */
+  animation: none;             /* only the sign-in page animates its window */
   stroke-dashoffset: 0;
+  stroke: var(--gold-light);
+  stroke-opacity: 0.4;
 }
+.appbar-rose .rose-window [class*="glass-"] { fill: var(--gold); fill-opacity: 0.12; }
 
 /* Left: logo, election name and date */
 .appbar-brand {
@@ -60,22 +106,23 @@
 }
 .appbar-logo {
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   padding: 2px;
   background: #fff;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(233, 169, 59, 0.7);
+  box-shadow: 0 0 0 2px rgba(233, 169, 59, 0.75), 0 6px 16px -6px rgba(0, 0, 0, 0.6);
 }
 .appbar-title {
   display: block;
   font-family: var(--font-display);
-  font-size: 19px;
-  line-height: 1.15;
-  color: #FFF6E6;
+  font-size: 20px;
+  line-height: 1.12;
+  letter-spacing: -0.005em;
+  color: #FFF8E8;
   text-wrap: balance;          /* no single word ("2026") left alone on the second line */
 }
-.appbar-date { display: block; font-size: 13px; font-weight: 600; color: var(--candle-light); }
+.appbar-date { display: block; margin-top: 2px; font-size: 13px; font-weight: 700; color: var(--gold-light); }
 
 /* Right: who is signed in, where, and sign-out */
 .appbar-user { display: flex; align-items: center; gap: 12px; }
@@ -88,8 +135,8 @@
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: var(--violet-900);
-  background: var(--candle-light);
+  color: var(--forest-900);
+  background: linear-gradient(160deg, #FBE7B8, var(--gold));
   border-radius: 50%;
 }
 .appbar-user-name { display: block; font-size: 15px; font-weight: 700; line-height: 1.2; }
@@ -98,7 +145,7 @@
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: var(--tracery);
+  color: var(--sage);
 }
 .appbar-user-centre svg { width: 14px; height: 14px; flex: none; }
 
@@ -110,13 +157,13 @@
   height: 42px;
   padding: 0;
   color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 12px;
   cursor: pointer;
   transition: background 0.15s;
 }
-.icon-button:hover { background: rgba(255, 255, 255, 0.18); }
+.icon-button:hover { background: rgba(255, 255, 255, 0.16); }
 .icon-button svg { width: 20px; height: 20px; }
 
 /* Shared line-icon look: outline strokes in the current text colour */
@@ -128,7 +175,7 @@
   stroke-linejoin: round;
 }
 
-/* Phones: brand on one row, the signed-in official on a second row below a hairline */
+/* Phones: brand on one row, the signed-in person on a second row below a hairline */
 @media (max-width: 640px) {
   .appbar-user {
     width: 100%;
@@ -138,35 +185,44 @@
   .appbar-user-text { flex: 1; min-width: 0; }
 }
 
-/* ===== Page headings ===== */
-.page-heading { font-size: 36px; line-height: 1.05; margin: 0 0 8px; }
-.page-intro { max-width: 46ch; margin: 0 0 26px; color: var(--muted); }
+/* ===== Page headings: Gloock, large and tight ===== */
+.page-heading {
+  margin: 0 0 8px;
+  font-size: 40px;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+.page-intro { max-width: 46ch; margin: 0 0 26px; font-size: 18px; color: var(--ink-muted); }
 
-/* ===== Notices: something stops the official from starting ===== */
+@media (min-width: 700px) {
+  .page-heading { font-size: 52px; }
+}
+
+/* ===== Notices: something stops the person from starting ===== */
 .notice {
   max-width: 520px;
   margin: 32px auto 0;
-  padding: 36px 28px 30px;
+  padding: 38px 28px 32px;
   text-align: center;
   background: #fff;
-  border: 1px solid #E6E0EC;
-  border-radius: 24px;
-  box-shadow: 0 24px 48px -32px rgba(36, 17, 47, 0.45);
+  border: 1px solid var(--hairline);
+  border-radius: 26px;
+  box-shadow: var(--shadow-card);
 }
 .notice-icon {
   display: grid;
   place-items: center;
-  width: 68px;
-  height: 68px;
+  width: 70px;
+  height: 70px;
   margin: 0 auto 18px;
-  color: var(--violet-700);
-  background: var(--violet-100);
+  color: var(--forest-700);
+  background: var(--forest-100);
   border-radius: 50%;
-  box-shadow: 0 0 0 6px #F7F2FB;
+  box-shadow: 0 0 0 7px #F1F5EE;
 }
 .notice-icon svg { width: 30px; height: 30px; }
-.notice h1 { font-size: 28px; margin: 0 0 10px; }
-.notice p { margin: 0 auto; max-width: 38ch; color: var(--muted); }
+.notice h1 { font-size: 30px; letter-spacing: -0.015em; margin: 0 0 10px; }
+.notice p { margin: 0 auto; max-width: 38ch; color: var(--ink-muted); }
 .notice .btn { margin-top: 22px; }
 .notice-meta { margin-top: 18px !important; font-size: 15px; }
 
@@ -182,15 +238,18 @@
   font-size: 18px;
   font-weight: 700;
   line-height: 1.35;
-  color: #fff;
   border: none;
   border-radius: 18px;
 }
+/* Success: bright leaf green with dark text, so it stands apart from the dark green panels */
 .app-main > .alert-success {
-  background: var(--green);
-  box-shadow: 0 16px 30px -18px rgba(20, 108, 46, 0.9);
+  color: var(--forest-950);
+  background: linear-gradient(135deg, #9AD35E, var(--leaf));
+  box-shadow: 0 16px 30px -18px rgba(62, 120, 22, 0.9);
 }
+/* STOP: red, unchanged */
 .app-main > .alert-error {
+  color: #fff;
   background: var(--red);
   box-shadow: 0 16px 30px -18px rgba(179, 38, 30, 0.9);
 }
@@ -204,7 +263,7 @@
   background-size: contain;
 }
 .app-main > .alert-success::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9.5'/%3E%3Cpath d='M7.5 12.5l3 3 6-6.5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306200F' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9.5'/%3E%3Cpath d='M7.5 12.5l3 3 6-6.5'/%3E%3C/svg%3E");
 }
 .app-main > .alert-error::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2.5h8L21.5 8v8L16 21.5H8L2.5 16V8z'/%3E%3Cpath d='M12 7.5v5.5M12 16.5h.01'/%3E%3C/svg%3E");

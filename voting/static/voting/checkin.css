@@ -1,7 +1,8 @@
 /* =====================================================================
-   Check-in pages: session picker, live session panel, search and results.
-   Loaded only by the check-in pages, on top of style.css and app.css,
-   so it uses the same colours and fonts (var(--violet-700) etc.).
+   Check-in pages: session picker, live session panel, search, results,
+   the confirm screen and the STOP card. Loaded on top of style.css and
+   app.css, so it uses the parish green & gold tokens from app.css
+   (var(--forest-900), var(--gold) etc.).
    ===================================================================== */
 
 /* ===== Session picker ===== */
@@ -17,18 +18,18 @@
   padding: 18px 18px 18px 20px;
   font: inherit;
   text-align: left;
-  color: var(--violet-900);
+  color: var(--ink);
   background: #fff;
-  border: 1px solid #E6E0EC;
-  border-radius: 22px;
-  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.04), 0 18px 34px -26px rgba(36, 17, 47, 0.5);
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 .session-card:hover {
   transform: translateY(-2px);
-  border-color: #CDBEDB;
-  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.05), 0 24px 40px -24px rgba(36, 17, 47, 0.55);
+  border-color: #CBD3C3;
+  box-shadow: 0 1px 2px rgba(12, 58, 30, 0.06), 0 26px 44px -26px rgba(12, 58, 30, 0.6);
 }
 .session-card:active { transform: translateY(0); }
 
@@ -36,13 +37,18 @@
 .session-time {
   display: grid;
   justify-items: center;
-  min-width: 78px;
+  min-width: 82px;
   padding-right: 18px;
-  border-right: 1px solid #EEE8F3;     /* hairline between time and name */
-  color: var(--violet-700);
+  border-right: 1px solid var(--hairline);     /* hairline between time and name */
+  color: var(--forest-700);
 }
-.session-clock { font-family: var(--font-display); font-size: 34px; line-height: 1; }
-.session-ampm { margin-top: 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.session-clock {
+  font-family: var(--font-display);
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.session-ampm { margin-top: 5px; font-size: 13px; font-weight: 800; color: var(--ink-muted); }
 .session-time svg { width: 30px; height: 30px; }
 
 /* Middle column: name and count */
@@ -56,31 +62,35 @@
   font-weight: 700;
   line-height: 1.25;
 }
-.session-meta { display: block; margin-top: 4px; font-size: 15px; color: var(--muted); }
+.session-meta { display: block; margin-top: 4px; font-size: 15px; color: var(--ink-muted); }
 
-/* Right column: arrow in a circle that fills violet on hover */
+/* Right column: arrow in a circle that fills green on hover */
 .session-go {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  color: var(--violet-700);
-  background: var(--violet-100);
+  width: 46px;
+  height: 46px;
+  color: var(--forest-700);
+  background: var(--forest-100);
   border-radius: 50%;
   transition: background 0.15s, color 0.15s;
 }
 .session-go svg { width: 22px; height: 22px; }
-.session-card:hover .session-go { color: #fff; background: var(--violet-700); }
+.session-card:hover .session-go { color: #fff; background: var(--forest-700); }
 
 /* The session happening right now: a candle-gold edge and a "Now" tag */
-.session-card.is-now { border-color: var(--candle); background: #FFFCF5; }
-.session-card.is-now .session-time { color: #9A6512; }
+.session-card.is-now {
+  background: #FFFBEF;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold), 0 22px 40px -28px rgba(185, 126, 23, 0.7);
+}
+.session-card.is-now .session-time { color: var(--gold-ink); border-right-color: #F0DDB2; }
 .pill-now {
   padding: 2px 10px;
   font-size: 13px;
   font-weight: 800;
-  color: #5A3A05;
-  background: var(--candle-light);
+  color: var(--forest-950);
+  background: var(--gold);
   border-radius: 999px;
 }
 
@@ -91,11 +101,12 @@
   padding: 22px 22px 24px;
   color: #fff;
   background:
-    radial-gradient(ellipse 70% 90% at 100% 0%, rgba(233, 169, 59, 0.2), transparent 60%),
+    radial-gradient(ellipse 70% 90% at 100% 0%, rgba(233, 169, 59, 0.22), transparent 60%),
+    radial-gradient(ellipse 60% 70% at 0% 100%, rgba(124, 194, 67, 0.14), transparent 70%),
     var(--grain),
-    var(--violet-900);
-  border-radius: 26px;
-  box-shadow: 0 30px 60px -34px rgba(36, 17, 47, 0.8);
+    var(--forest-900);
+  border-radius: 28px;
+  box-shadow: var(--shadow-panel);
 }
 .live-panel-top {
   display: flex;
@@ -105,7 +116,7 @@
   margin-bottom: 18px;
 }
 
-/* "Checking in" with a softly pulsing green dot */
+/* "Checking in" with a softly pulsing leaf-green dot */
 .live-pill {
   display: inline-flex;
   align-items: center;
@@ -113,23 +124,25 @@
   padding: 6px 12px 6px 10px;
   font-size: 14px;
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
 }
 .live-dot {
+  flex: none;
   width: 9px;
   height: 9px;
-  background: #4ADE80;
+  background: var(--leaf);
   border-radius: 50%;
-  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+  box-shadow: 0 0 0 0 rgba(124, 194, 67, 0.6);
 }
 @media (prefers-reduced-motion: no-preference) {
   .live-dot { animation: live-pulse 2s ease-out infinite; }
 }
 @keyframes live-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); }
-  70%  { box-shadow: 0 0 0 9px rgba(74, 222, 128, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(124, 194, 67, 0.6); }
+  70%  { box-shadow: 0 0 0 9px rgba(124, 194, 67, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(124, 194, 67, 0); }
 }
 
 /* "Change session": a quiet outlined pill on the dark panel */
@@ -148,14 +161,20 @@
 }
 .ghost-button:hover { background: rgba(255, 255, 255, 0.1); }
 
-.live-title { margin: 0 0 6px; font-size: 34px; line-height: 1.05; color: #FFF6E6; }
+.live-title {
+  margin: 0 0 8px;
+  font-size: 38px;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: #FFF8E8;
+}
 .live-centre {
   display: flex;
   align-items: center;
   gap: 6px;
   margin: 0;
   font-size: 15px;
-  color: var(--tracery);
+  color: var(--sage);
 }
 .live-centre svg { width: 16px; height: 16px; }
 
@@ -165,16 +184,19 @@
   grid-template-columns: 1fr 1fr;
   margin: 22px 0 0;
   padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(245, 217, 154, 0.18);
 }
-.live-stats > div + div { padding-left: 18px; border-left: 1px solid rgba(255, 255, 255, 0.12); }
-.live-stats dt { font-size: 14px; color: var(--tracery); }
+/* Label on top, number at the bottom: if one label wraps onto two lines, the numbers still line up */
+.live-stats > div { display: grid; grid-template-rows: 1fr auto; }
+.live-stats > div + div { padding-left: 18px; border-left: 1px solid rgba(245, 217, 154, 0.18); }
+.live-stats dt { font-size: 14px; font-weight: 600; color: var(--sage); }
 .live-stats dd {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-family: var(--font-display);
-  font-size: 40px;
+  font-size: 46px;
   line-height: 1;
-  color: var(--candle-light);
+  letter-spacing: -0.02em;
+  color: var(--gold-light);
   font-variant-numeric: tabular-nums;   /* digits all the same width, so counts don't jiggle */
 }
 
@@ -185,12 +207,16 @@
   gap: 12px;
   padding: 12px 12px 12px 16px;
   color: #fff;
-  background: var(--grain), var(--violet-900);
-  border-radius: 18px;
+  background:
+    radial-gradient(ellipse 50% 120% at 100% 0%, rgba(233, 169, 59, 0.16), transparent 60%),
+    var(--grain),
+    var(--forest-900);
+  border-radius: 20px;
+  box-shadow: 0 18px 34px -26px rgba(6, 32, 15, 0.8);
 }
 .live-strip-text { flex: 1; min-width: 0; line-height: 1.3; }
 .live-strip-text strong { display: block; font-size: 16px; }
-.live-strip-text span { display: block; font-size: 13px; color: var(--tracery); }
+.live-strip-text span { display: block; font-size: 13px; color: var(--sage); }
 .strip-button {
   min-height: 40px;
   padding: 0 14px;
@@ -198,7 +224,7 @@
   font-size: 14px;
   font-weight: 700;
   color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 999px;
   cursor: pointer;
@@ -214,16 +240,17 @@
   transform: translateY(-50%);
   width: 22px;
   height: 22px;
-  color: var(--muted);
+  color: var(--ink-muted);
   pointer-events: none;
 }
 .search-field input {
-  min-height: 66px;
+  min-height: 68px;
   padding: 12px 112px 12px 52px;   /* room for the icon on the left and the Search button on the right */
   font-size: 19px;
-  border: 1px solid #D6CCE0;
-  border-radius: 20px;
-  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.04), 0 14px 30px -26px rgba(36, 17, 47, 0.5);
+  background: #fff;
+  border: 1px solid #CDD2C4;
+  border-radius: 22px;
+  box-shadow: var(--shadow-card);
 }
 /* More room on the right when the clear button is showing too */
 .search-field.has-clear input { padding-right: 150px; }
@@ -236,18 +263,20 @@
   top: 50%;
   right: 8px;
   transform: translateY(-50%);
-  height: 50px;
+  height: 52px;
   padding: 0 18px;
   font: inherit;
   font-size: 16px;
   font-weight: 700;
   color: #fff;
-  background: var(--violet-700);
+  background: var(--forest-700);
   border: none;
-  border-radius: 14px;
+  border-radius: 15px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
   cursor: pointer;
+  transition: background 0.15s;
 }
-.search-go:hover { background: var(--violet-900); }
+.search-go:hover { background: var(--forest-800); }
 
 /* Round "x" to clear the search, just left of the Search button */
 .search-clear {
@@ -259,8 +288,8 @@
   place-items: center;
   width: 36px;
   height: 36px;
-  color: var(--muted);
-  background: var(--violet-100);
+  color: var(--forest-700);
+  background: var(--forest-100);
   border-radius: 50%;
 }
 .search-clear svg { width: 18px; height: 18px; }
@@ -269,17 +298,17 @@
 .search-tips,
 .search-empty {
   margin-top: 18px;
-  padding: 20px 22px;
+  padding: 22px 22px 20px;
   background: #fff;
-  border: 1px solid #E6E0EC;
-  border-radius: 20px;
+  border: 1px solid var(--hairline);
+  border-radius: 22px;
 }
 .search-tips h2,
-.search-empty h2 { font-size: 22px; margin-bottom: 10px; }
+.search-empty h2 { font-size: 24px; letter-spacing: -0.015em; margin-bottom: 12px; }
 .search-tips ul,
 .search-empty ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
 .search-tips li,
-.search-empty li { position: relative; padding-left: 20px; color: var(--muted); }
+.search-empty li { position: relative; padding-left: 20px; color: var(--ink-muted); }
 /* Small candle-gold dots instead of standard bullets */
 .search-tips li::before,
 .search-empty li::before {
@@ -289,22 +318,22 @@
   top: 0.62em;
   width: 7px;
   height: 7px;
-  background: var(--candle);
+  background: var(--gold);
   border-radius: 50%;
 }
-.search-note { margin: 14px 4px 0; color: var(--muted); }
+.search-note { margin: 14px 4px 0; color: var(--ink-muted); }
 
 /* ===== Results ===== */
-.results-count { margin: 18px 4px 10px; font-size: 15px; font-weight: 600; color: var(--muted); }
+.results-count { margin: 20px 4px 10px; font-size: 15px; font-weight: 700; color: var(--ink-muted); }
 .results { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 
 /* One voter */
 .voter-card {
   padding: 16px;
   background: #fff;
-  border: 1px solid #E6E0EC;
-  border-radius: 22px;
-  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.04), 0 16px 32px -26px rgba(36, 17, 47, 0.5);
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
 }
 .voter-head {
   display: grid;
@@ -324,8 +353,8 @@
   width: 48px;
   height: 48px;
   font-weight: 800;
-  color: var(--violet-700);
-  background: var(--violet-100);
+  color: var(--forest-700);
+  background: var(--forest-100);
   border-radius: 50%;
 }
 /* Names in the reading font, bold: they must be read fast */
@@ -335,7 +364,7 @@
   font-family: var(--font-body);
   font-size: 20px;
   font-weight: 700;
-  letter-spacing: 0;
+  letter-spacing: -0.005em;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -347,7 +376,7 @@
   gap: 2px 0;
   margin: 4px 0 0;
   font-size: 15px;
-  color: var(--muted);
+  color: var(--ink-muted);
 }
 .voter-meta span + span::before {
   content: "";
@@ -356,7 +385,7 @@
   height: 0.9em;
   margin: 0 9px;
   vertical-align: -0.1em;
-  background: #CFC6D8;
+  background: #D3CDBB;
 }
 
 /* Status, always in words as well as colour */
@@ -368,14 +397,21 @@
   white-space: nowrap;
   border-radius: 999px;
 }
-.status-open { color: var(--violet-700); background: var(--violet-100); }
+.status-open { color: var(--ink-muted); background: var(--ivory-deep); }
 .status-voted { color: #fff; background: var(--red); }
 
-/* Not voted yet: the Tick button */
-.voter-card .btn-tick { margin-top: 14px; border-radius: 14px; }
+/* ===== The Tick buttons: candle gold with dark green text ===== */
+.btn-tick {
+  color: var(--forest-950);
+  background: linear-gradient(180deg, #F2B954, var(--gold));
+  border-color: #D9962A;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 12px 24px -14px rgba(185, 126, 23, 0.9);
+}
+.btn-tick:hover { color: var(--forest-950); background: linear-gradient(180deg, #F5C36A, #EDB045); }
+.voter-card .btn-tick { margin-top: 14px; border-radius: 16px; }
 
 /* Already voted: red edge, and where/when/who in a tinted box */
-.voter-card.is-voted { border-color: #F0B9B5; background: #FFFAFA; box-shadow: inset 5px 0 0 var(--red); }
+.voter-card.is-voted { border-color: #F0B9B5; background: #FFFAFA; box-shadow: inset 5px 0 0 var(--red), var(--shadow-card); }
 .voter-card.is-voted .voter-initials { color: var(--red); background: #FDE8E8; }
 .voter-voted {
   display: flex;
@@ -400,77 +436,81 @@
   margin: 0 0 14px -6px;
   padding: 8px 10px 8px 6px;
   font-weight: 700;
-  color: var(--violet-700);
+  color: var(--forest-700);
   text-decoration: none;
   border-radius: 10px;
 }
-.back-link:hover { background: var(--violet-100); }
+.back-link:hover { background: var(--forest-100); }
 .back-link svg { width: 22px; height: 22px; }
 
 .confirm-card {
   padding: 26px 22px 22px;
   background: #fff;
-  border: 1px solid #E6E0EC;
-  border-radius: 28px;
-  box-shadow: 0 1px 2px rgba(36, 17, 47, 0.04), 0 30px 60px -40px rgba(36, 17, 47, 0.6);
+  border: 1px solid var(--hairline);
+  border-radius: 30px;
+  box-shadow: 0 1px 2px rgba(12, 58, 30, 0.05), 0 34px 64px -42px rgba(12, 58, 30, 0.65);
 }
-.confirm-question { margin: 0 0 16px; font-weight: 600; color: var(--muted); }
+.confirm-question { margin: 0 0 16px; font-weight: 700; color: var(--ink-muted); }
 
 /* The person: big initials and their name in the display font */
-.confirm-person { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.confirm-person { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
 .confirm-initials {
   flex: none;
   display: grid;
   place-items: center;
-  width: 68px;
-  height: 68px;
+  width: 70px;
+  height: 70px;
   font-size: 24px;
   font-weight: 800;
-  color: var(--violet-700);
-  background: var(--violet-100);
+  color: var(--forest-700);
+  background: var(--forest-100);
   border-radius: 50%;
-  box-shadow: 0 0 0 5px #F7F2FB;
+  box-shadow: 0 0 0 6px #F1F5EE;
 }
-.confirm-name { margin: 0; font-size: 34px; line-height: 1.05; overflow-wrap: anywhere; }
+.confirm-name {
+  margin: 0;
+  font-size: 36px;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
 
 /* Details to check, as a neat two-column list */
 .confirm-details {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px 18px;
+  gap: 16px 18px;
   margin: 0 0 22px;
   padding: 18px 0 0;
-  border-top: 1px solid #EEE8F3;
+  border-top: 1px solid var(--hairline);
 }
-.confirm-details dt { font-size: 14px; color: var(--muted); }
-.confirm-details dd { margin: 2px 0 0; font-size: 19px; font-weight: 700; }
+.confirm-details dt { font-size: 14px; font-weight: 600; color: var(--ink-muted); }
+.confirm-details dd { margin: 3px 0 0; font-size: 19px; font-weight: 700; }
 
-/* The big green confirm button, with a tick icon */
+/* The big confirm button, with a tick icon */
 .btn-xl {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 66px;
+  min-height: 68px;
   font-size: 20px;
-  border-radius: 18px;
+  border-radius: 20px;
 }
 .btn-xl svg { width: 26px; height: 26px; stroke-width: 2.4; }
-.btn-tick { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 24px -14px rgba(20, 108, 46, 0.8); }
-.btn-tick:hover { background: #0F5824; border-color: #0F5824; }
 
 /* Cancel: a quiet text button */
-.btn-quiet { border-color: transparent; background: transparent; }
-.btn-quiet:hover { background: var(--violet-100); }
+.btn-quiet { color: var(--forest-700); border-color: transparent; background: transparent; }
+.btn-quiet:hover { background: var(--forest-100); }
 
-.confirm-note { margin: 14px 0 0; font-size: 14px; text-align: center; color: var(--muted); }
+.confirm-note { margin: 14px 0 0; font-size: 14px; text-align: center; color: var(--ink-muted); }
 
 /* ===== Already voted (STOP) ===== */
 .stop-card {
   overflow: hidden;
   background: #fff;
   border: 1px solid #F0B9B5;
-  border-radius: 28px;
+  border-radius: 30px;
   box-shadow: 0 30px 60px -40px rgba(179, 38, 30, 0.7);
 }
 .stop-band {
@@ -482,18 +522,17 @@
   background: var(--red);
 }
 .stop-band svg { flex: none; width: 40px; height: 40px; stroke-width: 1.8; }
-.stop-band h1 { margin: 0; font-size: 34px; color: #fff; }
+.stop-band h1 { margin: 0; font-size: 36px; letter-spacing: -0.02em; color: #fff; }
 .stop-body { padding: 20px 22px 22px; }
 .stop-body p { margin: 0 0 10px; }
 .stop-instruction { font-size: 20px; font-weight: 800; color: var(--red); }
 
 /* ===== Wider screens: a bit more room ===== */
 @media (min-width: 700px) {
-  .page-heading { font-size: 44px; }
   .session-label { font-size: 19px; }
   .live-panel { padding: 28px 30px 30px; }
-  .live-title { font-size: 42px; }
-  .live-stats dd { font-size: 48px; }
+  .live-title { font-size: 48px; }
+  .live-stats dd { font-size: 58px; }
   .confirm-card { padding: 34px 34px 28px; }
-  .confirm-name { font-size: 42px; }
+  .confirm-name { font-size: 46px; }
 }

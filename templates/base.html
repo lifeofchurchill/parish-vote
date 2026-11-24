@@ -5,8 +5,8 @@
   <meta charset="utf-8">
   {# Makes the page fit phone screens properly #}
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {# Colours the phone's browser bar violet to match the page #}
-  <meta name="theme-color" content="#24112F">
+  {# Colours the phone's browser bar to match the page: violet on the sign-in page, parish green once signed in #}
+  <meta name="theme-color" content="{% if user.is_authenticated %}#0C3A1E{% else %}#24112F{% endif %}">
   <title>{% block title %}Check-in{% endblock %} | {{ election.name|default:"Parish elections" }}</title>
 
   {# Fonts: Gloock (bold display serif for titles) and Bricolage Grotesque (everything else). #}
@@ -31,7 +31,8 @@
       <div class="appbar-inner">
         {# Left: parish logo, the active election and its date #}
         <a class="appbar-brand" href="{% url 'voting:checkin' %}">
-          <img class="appbar-logo" src="{% static 'voting/img/logo.png' %}" alt="" onerror="this.remove()">
+          {# The file name must match exactly, capital L included: the live server will care #}
+          <img class="appbar-logo" src="{% static 'voting/img/Logo.jpeg' %}" alt="" onerror="this.remove()">
           <span>
             <span class="appbar-title">{{ election.name|default:"Parish elections" }}</span>
             {% if election %}<span class="appbar-date">{{ election.date|date:"l j F Y" }}</span>{% endif %}

@@ -1,0 +1,160 @@
+{% comment %}
+  Turnout gauge for the Commissioner's dashboard: a rose window with 24 panes of glass.
+  The gold "lit" panes are revealed by a sweeping mask, so the window lights up clockwise
+  from the top to exactly the turnout, e.g. 27.79% = 27.79% of the way round.
+  dashboard.js animates the sweep; without JavaScript it simply shows the right amount.
+{% endcomment %}
+<svg class="rose" viewBox="-100 -100 200 200" role="img" aria-label="{{ percent }}% turnout" data-rose xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    {# One pane: a pointed (Gothic) arch, pointing up. Every pane is this shape, turned. #}
+    <path id="turnout-pane" d="M-6.59 -60.64L-9.4 -82.47C-9.6 -88.5 -5.4 -92.6 0 -94.5C5.4 -92.6 9.6 -88.5 9.4 -82.47L6.59 -60.64A61 61 0 0 0 -6.59 -60.64Z"/>
+
+    {# Lit glass: deep amber near the centre, bright candle gold at the tips #}
+    <radialGradient id="turnout-glass" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="95">
+      <stop offset="0.62" stop-color="#A8681A"/>
+      <stop offset="0.8" stop-color="#E9A93B"/>
+      <stop offset="0.97" stop-color="#FBE2A2"/>
+    </radialGradient>
+
+    {# A soft white light that travels round the lit glass #}
+    <radialGradient id="turnout-sheen">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    {# Glow: a blurred copy under the glass, like light spilling through it #}
+    <filter id="turnout-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    {# The shape of all 24 panes, so the travelling light only shows on the glass #}
+    <clipPath id="turnout-panes">
+      <use href="#turnout-pane" transform="rotate(7.5)"/>
+      <use href="#turnout-pane" transform="rotate(22.5)"/>
+      <use href="#turnout-pane" transform="rotate(37.5)"/>
+      <use href="#turnout-pane" transform="rotate(52.5)"/>
+      <use href="#turnout-pane" transform="rotate(67.5)"/>
+      <use href="#turnout-pane" transform="rotate(82.5)"/>
+      <use href="#turnout-pane" transform="rotate(97.5)"/>
+      <use href="#turnout-pane" transform="rotate(112.5)"/>
+      <use href="#turnout-pane" transform="rotate(127.5)"/>
+      <use href="#turnout-pane" transform="rotate(142.5)"/>
+      <use href="#turnout-pane" transform="rotate(157.5)"/>
+      <use href="#turnout-pane" transform="rotate(172.5)"/>
+      <use href="#turnout-pane" transform="rotate(187.5)"/>
+      <use href="#turnout-pane" transform="rotate(202.5)"/>
+      <use href="#turnout-pane" transform="rotate(217.5)"/>
+      <use href="#turnout-pane" transform="rotate(232.5)"/>
+      <use href="#turnout-pane" transform="rotate(247.5)"/>
+      <use href="#turnout-pane" transform="rotate(262.5)"/>
+      <use href="#turnout-pane" transform="rotate(277.5)"/>
+      <use href="#turnout-pane" transform="rotate(292.5)"/>
+      <use href="#turnout-pane" transform="rotate(307.5)"/>
+      <use href="#turnout-pane" transform="rotate(322.5)"/>
+      <use href="#turnout-pane" transform="rotate(337.5)"/>
+      <use href="#turnout-pane" transform="rotate(352.5)"/>
+    </clipPath>
+
+    {# The sweep: a thick ring drawn from 12 o'clock, as long as the turnout (pathLength="100") #}
+    <mask id="turnout-sweep" maskUnits="userSpaceOnUse" x="-100" y="-100" width="200" height="200">
+      <circle r="77" fill="none" stroke="#FFFFFF" stroke-width="46" pathLength="100"
+              stroke-dasharray="{{ turnout_exact }} 100" transform="rotate(-90)" data-rose-sweep/>
+    </mask>
+  </defs>
+
+  {# Outer rim: two gold rings #}
+  <circle class="rose-rim" r="98.5"/>
+  <circle class="rose-rim rose-rim-inner" r="96.5"/>
+
+  {# All 24 panes as dark, unlit glass #}
+  <g class="rose-glass">
+      <use href="#turnout-pane" transform="rotate(7.5)"/>
+      <use href="#turnout-pane" transform="rotate(22.5)"/>
+      <use href="#turnout-pane" transform="rotate(37.5)"/>
+      <use href="#turnout-pane" transform="rotate(52.5)"/>
+      <use href="#turnout-pane" transform="rotate(67.5)"/>
+      <use href="#turnout-pane" transform="rotate(82.5)"/>
+      <use href="#turnout-pane" transform="rotate(97.5)"/>
+      <use href="#turnout-pane" transform="rotate(112.5)"/>
+      <use href="#turnout-pane" transform="rotate(127.5)"/>
+      <use href="#turnout-pane" transform="rotate(142.5)"/>
+      <use href="#turnout-pane" transform="rotate(157.5)"/>
+      <use href="#turnout-pane" transform="rotate(172.5)"/>
+      <use href="#turnout-pane" transform="rotate(187.5)"/>
+      <use href="#turnout-pane" transform="rotate(202.5)"/>
+      <use href="#turnout-pane" transform="rotate(217.5)"/>
+      <use href="#turnout-pane" transform="rotate(232.5)"/>
+      <use href="#turnout-pane" transform="rotate(247.5)"/>
+      <use href="#turnout-pane" transform="rotate(262.5)"/>
+      <use href="#turnout-pane" transform="rotate(277.5)"/>
+      <use href="#turnout-pane" transform="rotate(292.5)"/>
+      <use href="#turnout-pane" transform="rotate(307.5)"/>
+      <use href="#turnout-pane" transform="rotate(322.5)"/>
+      <use href="#turnout-pane" transform="rotate(337.5)"/>
+      <use href="#turnout-pane" transform="rotate(352.5)"/>
+  </g>
+
+  {# The same 24 panes in lit gold, shown only where the sweep has reached #}
+  <g class="rose-lights" mask="url(#turnout-sweep)">
+    <g class="rose-light-panes" fill="url(#turnout-glass)" filter="url(#turnout-glow)">
+      <use href="#turnout-pane" transform="rotate(7.5)" data-pane="0"/>
+      <use href="#turnout-pane" transform="rotate(22.5)" data-pane="1"/>
+      <use href="#turnout-pane" transform="rotate(37.5)" data-pane="2"/>
+      <use href="#turnout-pane" transform="rotate(52.5)" data-pane="3"/>
+      <use href="#turnout-pane" transform="rotate(67.5)" data-pane="4"/>
+      <use href="#turnout-pane" transform="rotate(82.5)" data-pane="5"/>
+      <use href="#turnout-pane" transform="rotate(97.5)" data-pane="6"/>
+      <use href="#turnout-pane" transform="rotate(112.5)" data-pane="7"/>
+      <use href="#turnout-pane" transform="rotate(127.5)" data-pane="8"/>
+      <use href="#turnout-pane" transform="rotate(142.5)" data-pane="9"/>
+      <use href="#turnout-pane" transform="rotate(157.5)" data-pane="10"/>
+      <use href="#turnout-pane" transform="rotate(172.5)" data-pane="11"/>
+      <use href="#turnout-pane" transform="rotate(187.5)" data-pane="12"/>
+      <use href="#turnout-pane" transform="rotate(202.5)" data-pane="13"/>
+      <use href="#turnout-pane" transform="rotate(217.5)" data-pane="14"/>
+      <use href="#turnout-pane" transform="rotate(232.5)" data-pane="15"/>
+      <use href="#turnout-pane" transform="rotate(247.5)" data-pane="16"/>
+      <use href="#turnout-pane" transform="rotate(262.5)" data-pane="17"/>
+      <use href="#turnout-pane" transform="rotate(277.5)" data-pane="18"/>
+      <use href="#turnout-pane" transform="rotate(292.5)" data-pane="19"/>
+      <use href="#turnout-pane" transform="rotate(307.5)" data-pane="20"/>
+      <use href="#turnout-pane" transform="rotate(322.5)" data-pane="21"/>
+      <use href="#turnout-pane" transform="rotate(337.5)" data-pane="22"/>
+      <use href="#turnout-pane" transform="rotate(352.5)" data-pane="23"/>
+    </g>
+    <g clip-path="url(#turnout-panes)">
+      <circle class="rose-sheen" cx="0" cy="-78" r="26" fill="url(#turnout-sheen)"/>
+    </g>
+  </g>
+
+  {# Tracery: a ring of small roundels, then the centre medallion (the % sits on top, in HTML) #}
+  <g class="rose-roundels">
+    <circle cx="7.18" cy="-54.53" r="1.7"/>
+    <circle cx="21.05" cy="-50.81" r="1.7"/>
+    <circle cx="33.48" cy="-43.63" r="1.7"/>
+    <circle cx="43.63" cy="-33.48" r="1.7"/>
+    <circle cx="50.81" cy="-21.05" r="1.7"/>
+    <circle cx="54.53" cy="-7.18" r="1.7"/>
+    <circle cx="54.53" cy="7.18" r="1.7"/>
+    <circle cx="50.81" cy="21.05" r="1.7"/>
+    <circle cx="43.63" cy="33.48" r="1.7"/>
+    <circle cx="33.48" cy="43.63" r="1.7"/>
+    <circle cx="21.05" cy="50.81" r="1.7"/>
+    <circle cx="7.18" cy="54.53" r="1.7"/>
+    <circle cx="-7.18" cy="54.53" r="1.7"/>
+    <circle cx="-21.05" cy="50.81" r="1.7"/>
+    <circle cx="-33.48" cy="43.63" r="1.7"/>
+    <circle cx="-43.63" cy="33.48" r="1.7"/>
+    <circle cx="-50.81" cy="21.05" r="1.7"/>
+    <circle cx="-54.53" cy="7.18" r="1.7"/>
+    <circle cx="-54.53" cy="-7.18" r="1.7"/>
+    <circle cx="-50.81" cy="-21.05" r="1.7"/>
+    <circle cx="-43.63" cy="-33.48" r="1.7"/>
+    <circle cx="-33.48" cy="-43.63" r="1.7"/>
+    <circle cx="-21.05" cy="-50.81" r="1.7"/>
+    <circle cx="-7.18" cy="-54.53" r="1.7"/>
+  </g>
+  <circle class="rose-ring" r="50"/>
+  <circle class="rose-medallion" r="46.5"/>
+</svg>
