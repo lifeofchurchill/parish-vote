@@ -31,7 +31,7 @@
       <div class="appbar-inner">
         {# Left: parish logo, the active election and its date #}
         <a class="appbar-brand" href="{% url 'voting:checkin' %}">
-          <img class="appbar-logo" src="{% static 'voting/img/Logo.jpeg' %}" alt="" onerror="this.remove()">
+          <img class="appbar-logo" src="{% static 'voting/img/logo.png' %}" alt="" onerror="this.remove()">
           <span>
             <span class="appbar-title">{{ election.name|default:"Parish elections" }}</span>
             {% if election %}<span class="appbar-date">{{ election.date|date:"l j F Y" }}</span>{% endif %}
@@ -46,10 +46,18 @@
             <span class="appbar-user-text">
               <span class="appbar-user-name">{{ user.get_full_name|default:user.username }}</span>
               {% if centre_label %}
+                {# Officials: their polling centre #}
                 <span class="appbar-user-centre">
                   {# Map pin icon #}
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
                   {{ centre_label }}
+                </span>
+              {% elif role_label %}
+                {# The Commissioner: their role instead of a centre #}
+                <span class="appbar-user-centre">
+                  {# Shield icon #}
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/></svg>
+                  {{ role_label }}
                 </span>
               {% endif %}
             </span>

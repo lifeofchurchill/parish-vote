@@ -135,6 +135,10 @@ def checkin(request):
     election = Election.objects.active()
     profile = _get_profile(request)
 
+    # The Electoral Commissioner (a staff account with no polling centre) belongs on the dashboard
+    if profile is None and request.user.is_staff:
+        return redirect("voting:dashboard")
+
     # Anything that stops check-in from starting gets its own clear message
     if election is None:
         return render(request, "voting/checkin.html", {"problem": "no_election"})

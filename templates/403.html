@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Not allowed{% endblock %}
+
+{# Django shows this page whenever a view refuses access (PermissionDenied) #}
+{% block content %}
+  <section class="notice">
+    <div class="notice-icon">
+      {# Padlock icon #}
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+    </div>
+    <h1>This page is for the Electoral Commissioner</h1>
+    <p>Your account can check in voters, but it can't open this page.</p>
+    <a class="btn" href="{% url 'voting:checkin' %}">Back to check-in</a>
+  </section>
+{% endblock %}
