@@ -1,5 +1,5 @@
 """
-Pages for the Electoral Commissioner: live turnout now; fixing mistakes next.
+Pages for the Electoral Commissioner: live turnout, and undoing a tick made by mistake.
 
 Only staff accounts can open them (the "Staff status" box on the user in the admin).
 Officials who try get a "This page is for the Electoral Commissioner" page instead.
@@ -7,13 +7,18 @@ Officials who try get a "This page is for the Electoral Commissioner" page inste
 from datetime import timedelta
 from functools import wraps
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models import Count, Max, Q
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
-from .models import Election, Member, OrganizerProfile, VoteCheckIn, VotingSession
+from .forms import UndoTickForm
+from .models import Election, Member, OrganizerProfile, TickUndo, VoteCheckIn, VotingSession
+# The same search rules as the check-in page, so searching feels the same everywhere
+from .views import MAX_RESULTS, MIN_NAME_LETTERS, MIN_PHONE_DIGITS, _initials, _who
 
 # Shown in the app bar instead of a polling centre
 ROLE_LABEL = "Electoral Commissioner"
@@ -157,4 +162,116 @@ def dashboard(request):
         "recent_max": RECENT_TICKS,
         "needs_checking": needs_checking,
         "updated_at": now,
+    })
+
+
+# ---------- Undoing a tick ----------
+
+def _search_ticks(election, query):
+    """
+    Search the people TICKED in this election, by name or phone (same rules as check-in).
+    Returns (ticks, problem). problem is None, "short_name" or "short_phone".
+    """
+    compact = query.replace(" ", "").replace("+", "").replace("-", "")
+    ticks = VoteCheckIn.objects.filter(election=election).select_related(
+        "member", "session__centre", "ticked_by"
+    )
+
+    if compact.isdigit():
+        if len(compact) < MIN_PHONE_DIGITS:
+            return [], "short_phone"
+        digits = "0" + compact[3:] if compact.startswith("233") and len(compact) > 4 else compact
+        ticks = ticks.filter(Q(member__phone__contains=digits) | Q(member__other_phones__contains=digits))
+    else:
+        if len(compact) < MIN_NAME_LETTERS:
+            return [], "short_name"
+        for word in query.split():
+            ticks = ticks.filter(member__full_name__icontains=word)
+
+    return list(ticks.order_by("member__full_name")[: MAX_RESULTS + 1]), None
+
+
+@commissioner_required
+def undo_search(request):
+    """Find a ticked voter, and see the log of every tick undone in this election."""
+    election = Election.objects.active()
+    if election is None:
+        return render(request, "voting/undo.html", {"role_label": ROLE_LABEL, "no_election": True})
+
+    context = {"role_label": ROLE_LABEL}
+    query = request.GET.get("q", "").strip()
+    if query:
+        ticks, search_problem = _search_ticks(election, query)
+        for tick in ticks:
+            tick.member.age = tick.member.age_on(election.date)
+            tick.member.initials = _initials(tick.member.full_name)
+        context.update({
+            "query": query,
+            "search_problem": search_problem,
+            "results": ticks[:MAX_RESULTS],
+            "more_results": len(ticks) > MAX_RESULTS,
+        })
+
+    # The permanent log for this election, newest first
+    context["log"] = TickUndo.objects.filter(election=election).select_related(
+        "member", "session__centre", "ticked_by", "undone_by"
+    )
+    return render(request, "voting/undo.html", context)
+
+
+@commissioner_required
+def undo_tick(request, checkin_id):
+    """
+    GET:  the confirm screen, with the tick's details and a box for the reason.
+    POST: save the reason in the log and remove the tick, both or neither.
+    """
+    election = Election.objects.active()
+    if election is None:
+        return redirect("voting:undo")   # that page explains there's no open election
+    query = request.GET.get("q", "")
+    tick = (
+        VoteCheckIn.objects.filter(pk=checkin_id, election=election)
+        .select_related("member", "session__centre", "ticked_by")
+        .first()
+    )
+    if tick is None:
+        # Already undone (perhaps by someone else a moment ago), or not in this election
+        messages.error(request, "That tick has already been undone, so there was nothing to remove.")
+        return redirect("voting:undo")
+
+    form = UndoTickForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        # atomic(): the log entry and the removal happen together, or not at all
+        with transaction.atomic():
+            # Lock the tick while we work, so two people can't undo it at the same moment.
+            # (PostgreSQL honours this; SQLite simply runs one write at a time anyway.)
+            locked = VoteCheckIn.objects.select_for_update().filter(pk=tick.pk).first()
+            if locked is None:
+                messages.error(request, "That tick has already been undone, so there was nothing to remove.")
+                return redirect("voting:undo")
+            TickUndo.objects.create(
+                election=tick.election,
+                member=tick.member,
+                session=tick.session,
+                ticked_by=tick.ticked_by,
+                ticked_at=tick.ticked_at,
+                undone_by=request.user,
+                reason=form.cleaned_data["reason"],
+            )
+            locked.delete()
+        messages.success(
+            request,
+            f"Tick undone. {tick.member.full_name} can be ticked again; your reason is in the undo log.",
+        )
+        return redirect("voting:undo")
+
+    # GET, or the reason was missing/too short: show the confirm screen (with the error)
+    tick.member.age = tick.member.age_on(election.date)
+    tick.member.initials = _initials(tick.member.full_name)
+    tick.ticked_by_name = _who(tick.ticked_by)
+    return render(request, "voting/undo_confirm.html", {
+        "role_label": ROLE_LABEL,
+        "tick": tick,
+        "form": form,
+        "query": query,
     })

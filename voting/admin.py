@@ -11,6 +11,7 @@ from .models import (
     Member,
     OrganizerProfile,
     PollingCentre,
+    TickUndo,
     VoteCheckIn,
     VotingSession,
 )
@@ -70,6 +71,24 @@ class VoteCheckInAdmin(admin.ModelAdmin):
 
     # Ticks can only be made from the check-in page, and undone later from the
     # Commissioner's undo page (which keeps a log). So the admin is view-only here.
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(TickUndo)
+class TickUndoAdmin(admin.ModelAdmin):
+    list_display = ("member", "election", "ticked_at", "ticked_by", "undone_at", "undone_by")
+    list_filter = ("election",)
+    search_fields = ("member__full_name", "reason")
+
+    # The undo log is a permanent record: it can be read here, never added to,
+    # changed or deleted. New entries come only from the Commissioner's undo page.
     def has_add_permission(self, request):
         return False
 

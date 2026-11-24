@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Undo a tick{% endblock %}
+
+{% block extra_head %}
+  {# The search box and voter cards come from the check-in styles; the rest from commissioner.css #}
+  <link rel="stylesheet" href="{% static 'voting/checkin.css' %}">
+  <link rel="stylesheet" href="{% static 'voting/commissioner.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include "voting/commissioner_nav.html" with active="undo" %}
+
+{% if no_election %}
+  <section class="notice">
+    <div class="notice-icon">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+    </div>
+    <h1>No election is open</h1>
+    <p>Ticks can only be undone in the active election. Open one in the admin first.</p>
+    <a class="btn" href="{% url 'admin:voting_election_changelist' %}">Go to elections</a>
+  </section>
+
+{% else %}
+<div class="undo-layout">
+
+  {# ===== Left: find the person ===== #}
+  <section class="undo-find">
+    <h1 class="page-heading">Undo a tick</h1>
+    <p class="page-intro">Find someone who was ticked by mistake. Once undone, they can be ticked again, so be sure first. Every undo is kept in the log with your reason.</p>
+
+    {# GET search, like the check-in page: the search shows in the address bar and Back works #}
+    <form method="get" class="search-area" role="search">
+      <label for="q" class="sr-only">Search ticked voters by name or phone number</label>
+      <div class="search-field{% if query %} has-clear{% endif %}">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+        <input type="search" id="q" name="q" value="{{ query }}" placeholder="Name or phone"
+               autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search"
+               {% if not query %}autofocus{% endif %}>
+        {% if query %}
+          <a href="{% url 'voting:undo' %}" class="search-clear" aria-label="Clear search">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </a>
+        {% endif %}
+        <button type="submit" class="search-go">Search</button>
+      </div>
+    </form>
+
+    {% if not query %}
+      {# Nothing typed yet: when an undo is (and isn't) right #}
+      <section class="search-tips">
+        <h2>When to undo a tick</h2>
+        <ul>
+          <li>An official ticked the wrong person, for example the wrong Ama Mensah.</li>
+          <li>An official tapped Tick on the wrong row by accident.</li>
+          <li>Never undo a tick so that someone can vote twice.</li>
+        </ul>
+      </section>
+
+    {% elif search_problem == "short_name" %}
+      <p class="search-note">Type at least 2 letters of the name.</p>
+
+    {% elif search_problem == "short_phone" %}
+      <p class="search-note">Type at least 4 digits of the phone number.</p>
+
+    {% elif not results %}
+      <section class="search-empty">
+        <h2>No one ticked matches "{{ query }}"</h2>
+        <ul>
+          <li>Only people already ticked in this election appear here.</li>
+          <li>Check the spelling, or try their phone number instead.</li>
+        </ul>
+      </section>
+
+    {% else %}
+      <p class="results-count">
+        {% if more_results %}
+          More than {{ results|length }} matches. Add more of the name to narrow it down.
+        {% else %}
+          {{ results|length }} ticked voter{{ results|length|pluralize }} found
+        {% endif %}
+      </p>
+      <ul class="results">
+        {% for tick in results %}
+          <li class="voter-card is-voted">
+            <div class="voter-head">
+              <span class="voter-initials" aria-hidden="true">{{ tick.member.initials }}</span>
+              <h2 class="voter-name">{{ tick.member.full_name }}</h2>
+              <span class="status status-voted">Voted</span>
+              <p class="voter-meta">
+                <span>{{ tick.member.age }} yrs</span>
+                {% if tick.member.community %}<span>{{ tick.member.community }}</span>{% endif %}
+                {% if tick.member.masked_phone %}<span>{{ tick.member.masked_phone }}</span>{% endif %}
+              </p>
+            </div>
+            {# Where, when and who: the details the Commissioner checks before undoing #}
+            <p class="voter-voted">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+              <span>
+                Ticked at <strong>{{ tick.session.centre.name }}</strong>, {{ tick.session.label }},
+                {{ tick.ticked_at|time:"g:i a" }} by {{ tick.ticked_by.get_full_name|default:tick.ticked_by.username }}
+              </span>
+            </p>
+            {# Opens the confirm screen (keeps the search, for "Back") #}
+            <a href="{% url 'voting:undo_tick' tick.pk %}?q={{ query|urlencode }}" class="btn btn-block btn-undo">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+              Undo this tick
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </section>
+
+  {# ===== Right: the permanent log ===== #}
+  <section class="undo-log">
+    <h2 class="dash-section-title">Undo log</h2>
+    <p class="undo-log-intro">Every tick removed in this election. These records can't be changed or deleted.</p>
+    {% if log %}
+      <ol class="log-list">
+        {% for undo in log %}
+          <li>
+            <div class="log-head">
+              <strong>{{ undo.member.full_name }}</strong>
+              <time>{{ undo.undone_at|date:"j M, g:i a" }}</time>
+            </div>
+            {# The reason, in the Commissioner's own words #}
+            <p class="log-reason">{{ undo.reason|linebreaksbr }}</p>
+            <p class="log-meta">
+              Ticked at {{ undo.session.centre.name }}, {{ undo.ticked_at|time:"g:i a" }}, by {{ undo.ticked_by.get_full_name|default:undo.ticked_by.username }}.
+              Undone by {{ undo.undone_by.get_full_name|default:undo.undone_by.username }}.
+            </p>
+          </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <p class="dash-empty">No ticks have been undone in this election.</p>
+    {% endif %}
+  </section>
+</div>
+{% endif %}
+
+{% endblock %}

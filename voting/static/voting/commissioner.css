@@ -1,11 +1,45 @@
 /* =====================================================================
-   Electoral Commissioner pages: the live turnout dashboard (and, later,
-   undo, needs-checking and the backup list). Loaded on top of style.css
-   and app.css, so it uses the parish green & gold tokens from app.css.
+   Electoral Commissioner pages: the tabs, the live turnout dashboard and
+   undoing a tick (later: needs-checking and the backup list). Loaded on top
+   of style.css and app.css (and checkin.css on the undo pages), so it uses
+   the parish green & gold tokens from app.css.
    ===================================================================== */
 
 /* These pages are used on a laptop as well as a phone: allow more width */
 .app-main { max-width: 1120px; }
+
+/* ===== Tabs across the Commissioner's pages ===== */
+.comm-nav {
+  display: inline-flex;
+  gap: 4px;
+  margin: 0 0 24px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  box-shadow: var(--shadow-card);
+}
+.comm-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--forest-700);
+  text-decoration: none;
+  border-radius: 999px;
+  transition: background 0.15s, color 0.15s;
+}
+.comm-nav a:hover { background: var(--forest-100); }
+.comm-nav a[aria-current="page"] { color: #fff; background: var(--forest-900); }   /* the page you're on */
+.comm-nav svg { width: 18px; height: 18px; }
+/* Small phones: the tabs share the full width */
+@media (max-width: 520px) {
+  .comm-nav { display: flex; }
+  .comm-nav a { flex: 1; justify-content: center; padding: 0 10px; }
+}
 
 /* ===== Header: title and the live status ===== */
 .dash-header {
@@ -457,6 +491,108 @@
   100%    { background: rgba(124, 194, 67, 0); }
 }
 
+/* =====================================================================
+   Undo a tick
+   ===================================================================== */
+.undo-layout { display: grid; gap: 36px; }
+.undo-log-intro { margin: -6px 0 14px; font-size: 15px; color: var(--ink-muted); }
+
+/* "Undo this tick" on a result: a red outline, one step softer than the solid red on the confirm screen */
+.btn-undo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--red);
+  background: #fff;
+  border-color: #E7A9A4;
+  border-radius: 16px;
+}
+.btn-undo:hover { color: var(--red); background: #FDF1F0; border-color: var(--red); }
+.btn-undo svg { width: 20px; height: 20px; }
+
+/* The undo log: one card per undo, with the reason in a tinted box */
+.log-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.log-list li {
+  padding: 16px 18px 14px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+}
+.log-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.log-head strong { font-size: 17px; overflow-wrap: anywhere; }
+.log-head time {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--forest-700);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.log-reason {
+  margin: 8px 0 10px;
+  padding: 10px 14px;
+  font-size: 16px;
+  background: var(--ivory);
+  border-radius: 12px;
+}
+.log-meta { margin: 0; font-size: 13px; color: var(--ink-muted); }
+
+/* ===== Confirm screen ===== */
+.undo-confirm { max-width: 680px; margin: 0 auto; }
+.confirm-initials.is-voted { color: var(--red); background: #FDE8E8; box-shadow: 0 0 0 6px #FEF3F2; }
+.confirm-details .is-wide { grid-column: 1 / -1; }   /* centre names are long: give them the full row */
+
+/* "After this, they count as not voted": said plainly before the button */
+.undo-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  font-size: 16px;
+  color: #5A3A05;
+  background: #FDF3DC;
+  border: 1px solid #F2D399;
+  border-radius: 16px;
+}
+.undo-warning svg { flex: none; width: 22px; height: 22px; margin-top: 1px; }
+
+/* The reason box */
+#undo-form label { margin-bottom: 2px; font-size: 17px; }
+.field-help { margin: 0 0 10px; font-size: 14px; color: var(--ink-muted); }
+.undo-reason {
+  display: block;
+  width: 100%;
+  min-height: 124px;
+  padding: 14px 16px;
+  font: inherit;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #CDD2C4;
+  border-radius: 16px;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.undo-reason::placeholder { color: #8A9283; }
+.undo-reason:focus { outline: none; border-color: var(--forest-700); box-shadow: 0 0 0 4px rgba(233, 169, 59, 0.4); }
+/* Django marks a field with an error as aria-invalid="true" */
+.undo-reason[aria-invalid="true"] { border-color: var(--red); box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.12); }
+.field-error { margin: 8px 0 0; font-size: 15px; font-weight: 700; color: var(--red); }
+
+/* The final button: solid red, because this changes who is allowed to vote */
+.btn-danger {
+  margin-top: 18px;
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 12px 24px -14px rgba(179, 38, 30, 0.9);
+}
+.btn-danger:hover { color: #fff; background: #931F18; border-color: #931F18; }
+
 /* ===== Laptops ===== */
 @media (min-width: 760px) {
   .turnout-panel {
@@ -473,4 +609,7 @@
 }
 @media (min-width: 960px) {
   .dash-grid { grid-template-columns: 1.1fr 1fr; align-items: start; }
+  /* Undo page: search on the left, the log on the right */
+  .undo-layout { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 52px; align-items: start; }
+  .undo-log { padding-top: 18px; }
 }

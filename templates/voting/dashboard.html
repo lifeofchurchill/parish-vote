@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+{% include "voting/commissioner_nav.html" with active="turnout" %}
 
 {% if no_election %}
   <section class="notice">

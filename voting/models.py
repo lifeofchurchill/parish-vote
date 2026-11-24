@@ -7,6 +7,7 @@ VotingSession   -> a voting window at a centre for one election (e.g. After 7:00
 Member          -> a person copied from the church's CSV export
 OrganizerProfile-> links an official's login to the centre they work at
 VoteCheckIn     -> proof that a member has voted in an election (one per member per election)
+TickUndo        -> permanent record of a tick the Electoral Commissioner removed, and why
 """
 from datetime import date, timedelta
 
@@ -232,3 +233,35 @@ class VoteCheckIn(models.Model):
 
     def __str__(self):
         return f"{self.member.full_name} voted in {self.election}"
+
+
+class TickUndo(models.Model):
+    """
+    A tick the Electoral Commissioner removed, kept forever.
+
+    Undoing deletes the VoteCheckIn (so the member can be ticked again), but first
+    every detail of it is copied here, with who undid it, when, and why.
+    Nothing in the app edits or deletes these rows: the admin shows them read-only.
+    """
+    election = models.ForeignKey(Election, on_delete=models.PROTECT, related_name="undos")
+    member = models.ForeignKey(Member, on_delete=models.PROTECT, related_name="undos")
+
+    # Copied from the removed tick: where, who and when
+    session = models.ForeignKey(VotingSession, on_delete=models.PROTECT, related_name="undos")
+    ticked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="ticks_undone"
+    )
+    ticked_at = models.DateTimeField()
+
+    # The undo itself
+    undone_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="undos"
+    )
+    undone_at = models.DateTimeField(auto_now_add=True)
+    reason = models.TextField()
+
+    class Meta:
+        ordering = ["-undone_at"]
+
+    def __str__(self):
+        return f"{self.member.full_name}: tick undone"

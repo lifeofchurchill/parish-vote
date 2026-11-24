@@ -1,0 +1,14 @@
+{# Tabs across the Electoral Commissioner's pages. Each page says which tab is its own: #}
+{#   {% include "voting/commissioner_nav.html" with active="undo" %}                    #}
+<nav class="comm-nav" aria-label="Electoral Commissioner pages">
+  <a href="{% url 'voting:dashboard' %}"{% if active == "turnout" %} aria-current="page"{% endif %}>
+    {# Pulse line icon #}
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
+    Live turnout
+  </a>
+  <a href="{% url 'voting:undo' %}"{% if active == "undo" %} aria-current="page"{% endif %}>
+    {# Curved "undo" arrow icon #}
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+    Undo a tick
+  </a>
+</nav>

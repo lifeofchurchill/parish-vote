@@ -18,4 +18,8 @@ urlpatterns = [
 
     # Electoral Commissioner pages (staff accounts only)
     path("commissioner/", commissioner_views.dashboard, name="dashboard"),
+    # Find a ticked voter, and the undo log
+    path("commissioner/undo/", commissioner_views.undo_search, name="undo"),
+    # Confirm screen (GET) and the actual undo (POST) for one tick
+    path("commissioner/undo/<int:checkin_id>/", commissioner_views.undo_tick, name="undo_tick"),
 ]
