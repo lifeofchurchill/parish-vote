@@ -1,21 +1,22 @@
 # Render "Blueprint": tells Render what to create for this app.
 # One PostgreSQL database and one web service, both in Frankfurt
 # (Render's closest region to Ghana, so pages load faster in Accra).
-# Election week runs on the cheapest paid plans: they never sleep or restart at random.
-# Billing is by the second, so a few days costs a few dollars.
+# Both on Render's free plans. Free limits to remember:
+#   - the web service sleeps after 15 minutes with no visitors (waking up takes up to a minute)
+#   - the free database is deleted 30 days after it's created: download the records after the election
 
 databases:
   - name: parish-vote-db
-    # Basic-256mb ($6/month, charged by the second): no 30-day expiry, no surprise maintenance
-    plan: basic-256mb
+    # Free: 1 GB of space (plenty for the member list); expires 30 days after creation
+    plan: free
     region: frankfurt
     databaseName: parish_vote
     user: parish_vote
 
 services:
   - type: web
-    # Starter ($7/month, charged by the second): never sleeps, 5x the CPU of free
-    plan: starter
+    # Free: sleeps after 15 minutes without visitors. Change to "starter" for a paid plan that never sleeps.
+    plan: free
     name: parish-vote
     runtime: python
     region: frankfurt
