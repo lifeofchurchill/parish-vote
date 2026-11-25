@@ -50,10 +50,10 @@
   </section>
 
 {% elif not current_session %}
-  {# Before check-in: pick the session #}
+  {# Before check-in: the official's polling centre, then pick the session #}
   <header>
-    <h1 class="page-heading">Which session is this?</h1>
-    <p class="page-intro">Pick the Mass you're checking voters in after. You can switch at any time.</p>
+    <h1 class="page-heading">{{ centre_label }}</h1>
+    <p class="page-intro">Which session is this? Pick the Mass you're checking voters in after. You can switch at any time.</p>
   </header>
 
   {# One form, one button per session: the button you tap sends its own value #}
