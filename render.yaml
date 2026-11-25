@@ -1,0 +1,38 @@
+# Render "Blueprint": tells Render what to create for this app.
+# One PostgreSQL database and one web service, both in Frankfurt
+# (Render's closest region to Ghana, so pages load faster in Accra).
+# Election week runs on the cheapest paid plans: they never sleep or restart at random.
+# Billing is by the second, so a few days costs a few dollars.
+
+databases:
+  - name: parish-vote-db
+    # Basic-256mb ($6/month, charged by the second): no 30-day expiry, no surprise maintenance
+    plan: basic-256mb
+    region: frankfurt
+    databaseName: parish_vote
+    user: parish_vote
+
+services:
+  - type: web
+    # Starter ($7/month, charged by the second): never sleeps, 5x the CPU of free
+    plan: starter
+    name: parish-vote
+    runtime: python
+    region: frankfurt
+    # Every deploy: install packages, gather CSS/JS/images, update the database tables
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
+    # Gunicorn runs Django on the server: 2 workers so two people can be served at the same moment
+    startCommand: gunicorn config.wsgi:application --workers 2 --timeout 60
+    # After each deploy, Render checks this page answers "ok" before sending visitors to the new version
+    healthCheckPath: /healthz/
+    envVars:
+      # The database address, filled in by Render from the database above
+      - key: DATABASE_URL
+        fromDatabase:
+          name: parish-vote-db
+          property: connectionString
+      # A long random secret, made by Render once and kept
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"

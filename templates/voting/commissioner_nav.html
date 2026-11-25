@@ -16,4 +16,9 @@
     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
     Undo a tick
   </a>
+  <a href="{% url 'voting:records' %}"{% if active == "records" %} aria-current="page"{% endif %}>
+    {# Printer icon #}
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg>
+    Print &amp; download
+  </a>
 </nav>

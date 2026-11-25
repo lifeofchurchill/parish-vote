@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Backup voter list | {{ election.name }}</title>
+  {# The same two fonts as the app; if they can't load, the list still prints in the computer's own fonts #}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Gloock&display=swap">
+  {# A page of its own (no app bar): it's made to be printed #}
+  <link rel="stylesheet" href="{% static 'voting/print.css' %}">
+</head>
+<body>
+
+  {# ===== Toolbar: on screen only, never printed ===== #}
+  <div class="toolbar">
+    <div class="toolbar-inner">
+      <a class="toolbar-back" href="{% url 'voting:records' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 7l-5 5 5 5"/></svg>
+        Back
+      </a>
+
+      {# Choices change only what's printed; nothing is saved. Changing one reloads the list. #}
+      <form method="get" class="toolbar-options">
+        <label>
+          Centre on the list
+          <select name="centre" onchange="this.form.submit()">
+            <option value="">Leave blank to write in</option>
+            {% for option in centres %}
+              <option value="{{ option.pk }}"{% if centre and centre.pk == option.pk %} selected{% endif %}>{{ option.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          People already ticked
+          <select name="voted" onchange="this.form.submit()">
+            <option value="mark"{% if voted_mode == "mark" %} selected{% endif %}>Show them, marked Voted</option>
+            <option value="omit"{% if voted_mode == "omit" %} selected{% endif %}>Leave them out</option>
+          </select>
+        </label>
+        <noscript><button type="submit">Apply</button></noscript>
+      </form>
+
+      <p class="toolbar-count">{{ rows }} {{ rows|pluralize:"person,people" }}, about {{ pages }} page{{ pages|pluralize }}</p>
+      <button type="button" class="toolbar-print" onclick="window.print()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg>
+        Print
+      </button>
+    </div>
+  </div>
+
+  {# ===== The sheet: what comes out of the printer ===== #}
+  <main class="sheet">
+    {# First page: title, spaces to fill in, and the rules #}
+    <header class="sheet-head">
+      <img class="sheet-logo" src="{% static 'voting/img/Logo.jpeg' %}" alt="" onerror="this.remove()">
+      <div>
+        <p class="sheet-type">Backup voter list</p>
+        <h1>{{ election.name }}</h1>
+        <p class="sheet-sub">
+          {{ election.date|date:"l j F Y" }}. Ages {{ election.age_rule }}.
+          {{ rows }} {% if voted_mode == "omit" %}still to vote{% else %}eligible member{{ rows|pluralize }}{% endif %}.
+        </p>
+      </div>
+    </header>
+
+    <div class="sheet-fields">
+      <p>Centre <span class="fill">{% if centre %}{{ centre.name }}{% endif %}</span></p>
+      <p>Session <span class="fill"></span></p>
+      <p>Official <span class="fill"></span></p>
+    </div>
+
+    <div class="sheet-rules">
+      <p><strong>Use this list only when the app isn't working.</strong> Find the person, tick their box and write the time. Give a ballot paper only if their box was empty.</p>
+      <p>
+        Printed {{ printed_at|date:"j F Y, g:i a" }}.
+        {% if voted_mode == "mark" and already_voted %}The {{ already_voted }} {{ already_voted|pluralize:"person,people" }} ticked in the app before then {{ already_voted|pluralize:"is,are" }} shaded and marked Voted.{% endif %}
+        When the app works again, tick everyone from this list in the app.
+      </p>
+      <p>Confidential: members' personal details. Return every page to the Electoral Commissioner after voting.</p>
+    </div>
+
+    {# The register. <thead> repeats at the top of every printed page. #}
+    <table class="register">
+      {# Column widths. With table-layout: fixed the browser takes them from here, exactly. #}
+      <colgroup>
+        <col class="col-box">
+        <col class="col-name">
+        <col class="col-age">
+        <col class="col-community">
+        <col class="col-phone">
+        <col class="col-id">
+        <col class="col-time">
+      </colgroup>
+      <thead>
+        <tr class="register-title">
+          <th colspan="7">{{ election.name }}, backup list{% if centre %}, {{ centre.name }}{% endif %}</th>
+        </tr>
+        <tr>
+          <th scope="col" class="col-box"><span class="sr-only">Tick</span></th>
+          <th scope="col" class="col-name">Name</th>
+          <th scope="col" class="col-age">Age</th>
+          <th scope="col" class="col-community">Community</th>
+          <th scope="col" class="col-phone">Phone</th>
+          <th scope="col" class="col-id">Id</th>
+          <th scope="col" class="col-time">Time</th>
+        </tr>
+      </thead>
+      {% for group in groups %}
+        <tbody>
+          {# A, B, C...: makes a name quick to find on paper #}
+          <tr class="letter-row"><th colspan="7" scope="rowgroup">{{ group.letter }}</th></tr>
+          {% for member in group.members %}
+            <tr{% if member.tick %} class="is-voted"{% endif %}>
+              <td class="col-box"><span class="box"></span></td>
+              <td class="col-name">{{ member.full_name }}</td>
+              <td class="col-age">{{ member.age }}</td>
+              <td class="col-community">{{ member.community }}</td>
+              <td class="col-phone">{{ member.masked_phone }}</td>
+              <td class="col-id">{{ member.church_id }}</td>
+              <td class="col-time">{% if member.tick %}Voted {{ member.tick.ticked_at|time:"g:i a" }}<span class="place">{{ member.tick_place }}</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      {% empty %}
+        <tbody><tr><td colspan="7" class="register-empty">No one to list: everyone eligible has already voted.</td></tr></tbody>
+      {% endfor %}
+    </table>
+  </main>
+
+</body>
+</html>

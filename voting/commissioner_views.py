@@ -1,10 +1,12 @@
 """
 Pages for the Electoral Commissioner: live turnout, adding missing dates of birth,
-and undoing a tick made by mistake.
+undoing a tick made by mistake, and the paper backup list and downloads.
 
 Only staff accounts can open them (the "Staff status" box on the user in the admin).
 Officials who try get a "This page is for the Electoral Commissioner" page instead.
 """
+import csv
+import math
 from datetime import timedelta
 from functools import wraps
 
@@ -13,12 +15,16 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Count, Max, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
 from .forms import DateOfBirthForm, UndoTickForm
-from .models import Election, Member, OrganizerProfile, TickUndo, VoteCheckIn, VotingSession
+from .models import (
+    Election, Member, OrganizerProfile, PollingCentre, TickUndo, VoteCheckIn, VotingSession,
+)
 # The same search rules as the check-in page, so searching feels the same everywhere
 from .views import MAX_RESULTS, MIN_NAME_LETTERS, MIN_PHONE_DIGITS, _initials, _who
 
@@ -252,6 +258,174 @@ def add_date_of_birth(request, member_id):
             f"age rule ({election.age_rule}), so they can't vote in this election.",
         )
     return redirect("voting:needs_checking")
+
+
+# ---------- Print & download: the paper backup list and CSV files ----------
+
+# Roughly how many rows of the backup list fit on one A4 page (for "about N pages")
+ROWS_PER_PAGE = 30
+
+
+def _pages(rows):
+    """About how many A4 pages a list of this many rows prints on (+10: the first page's heading)."""
+    return max(1, math.ceil((rows + 10) / ROWS_PER_PAGE))
+
+
+@commissioner_required
+def records(request):
+    """The Print & download page: the backup list and the two CSV files."""
+    election = Election.objects.active()
+    context = {"role_label": ROLE_LABEL, "election": election}
+    if election:
+        eligible = Member.objects.eligible(election).count()
+        context.update({
+            "eligible": eligible,
+            "voted": VoteCheckIn.objects.filter(election=election).count(),
+            "undone": TickUndo.objects.filter(election=election).count(),
+            # +26 for the letter headings (A, B, C...) between groups of names
+            "pages": _pages(eligible + 26),
+        })
+    return render(request, "voting/records.html", context)
+
+
+@commissioner_required
+def backup_list(request):
+    """
+    The paper list for when the app or the internet is down: every eligible member,
+    A to Z, with a box to tick and a space for the time. Black and white, for A4.
+    """
+    election = Election.objects.active()
+    if election is None:
+        messages.error(request, "Open an election first: the list is for the active election.")
+        return redirect("voting:records")
+
+    # Options from the toolbar (they only change what's printed, nothing is saved)
+    voted_mode = "omit" if request.GET.get("voted") == "omit" else "mark"
+    centres = PollingCentre.objects.filter(sessions__election=election).distinct()
+    centre_id = request.GET.get("centre", "")
+    centre = centres.filter(pk=centre_id).first() if centre_id.isdigit() else None
+
+    # Who has already been ticked, and where (one query for everyone)
+    ticks = {
+        tick.member_id: tick
+        for tick in VoteCheckIn.objects.filter(election=election).select_related("session__centre")
+    }
+
+    # Eligible members A to Z, grouped under their first letter
+    groups = []
+    rows = 0
+    for member in Member.objects.eligible(election).order_by("full_name"):
+        member.tick = ticks.get(member.pk)
+        if member.tick and voted_mode == "omit":
+            continue
+        if member.tick:
+            # Short place name for the narrow Time column: "St. Thomas More, Achimota" -> "Achimota"
+            member.tick_place = member.tick.session.centre.name.split(",")[-1].strip()
+        member.age = member.age_on(election.date)
+        letter = member.full_name[:1].upper()
+        if not letter.isalpha():
+            letter = "#"
+        if not groups or groups[-1]["letter"] != letter:
+            groups.append({"letter": letter, "members": []})
+        groups[-1]["members"].append(member)
+        rows += 1
+
+    return render(request, "voting/backup_list.html", {
+        "election": election,
+        "groups": groups,
+        "rows": rows,
+        "already_voted": len(ticks),
+        "voted_mode": voted_mode,
+        "centres": centres,
+        "centre": centre,
+        "printed_at": timezone.now(),
+        "pages": _pages(rows + len(groups)),
+    })
+
+
+# Characters that make Excel treat a cell as a formula. A name typed as "=HYPERLINK(...)"
+# could otherwise run when the file is opened ("CSV injection"), so such cells get a '
+FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _cell(value):
+    """A value made safe for a spreadsheet cell."""
+    text = "" if value is None else str(value)
+    return "'" + text if text.startswith(FORMULA_STARTS) else text
+
+
+def _csv_download(filename, header, rows):
+    """A CSV file the browser downloads, which Excel opens with names spelt correctly."""
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    # The "byte order mark": tells Excel the file is UTF-8, so a name like "Kwakyé" survives
+    response.write("\ufeff")
+    writer = csv.writer(response)
+    writer.writerow(header)
+    for row in rows:
+        writer.writerow([_cell(value) for value in row])
+    return response
+
+
+def _when(moment):
+    """A stored time as Ghana time, e.g. 29/11/2026 09:41."""
+    return timezone.localtime(moment).strftime("%d/%m/%Y %H:%M")
+
+
+@commissioner_required
+def download_voted(request):
+    """Everyone ticked in the active election, in the order they were ticked."""
+    election = Election.objects.active()
+    if election is None:
+        messages.error(request, "Open an election first: the download is for the active election.")
+        return redirect("voting:records")
+
+    ticks = (
+        VoteCheckIn.objects.filter(election=election)
+        .select_related("member", "session__centre", "ticked_by")
+        .order_by("ticked_at")
+    )
+    rows = (
+        [
+            tick.member.church_id, tick.member.full_name, tick.member.age_on(election.date),
+            tick.member.community, tick.session.centre.name, tick.session.label,
+            _when(tick.ticked_at), _who(tick.ticked_by),
+        ]
+        for tick in ticks
+    )
+    return _csv_download(
+        f"who-voted-{slugify(election.name)}.csv",
+        ["Church id", "Name", "Age on election day", "Community", "Centre", "Session", "Ticked at", "Ticked by"],
+        rows,
+    )
+
+
+@commissioner_required
+def download_undo_log(request):
+    """Every tick undone in the active election, with the reasons."""
+    election = Election.objects.active()
+    if election is None:
+        messages.error(request, "Open an election first: the download is for the active election.")
+        return redirect("voting:records")
+
+    undos = (
+        TickUndo.objects.filter(election=election)
+        .select_related("member", "session__centre", "ticked_by", "undone_by")
+        .order_by("undone_at")
+    )
+    rows = (
+        [
+            undo.member.church_id, undo.member.full_name, undo.session.centre.name, undo.session.label,
+            _when(undo.ticked_at), _who(undo.ticked_by), _when(undo.undone_at), _who(undo.undone_by),
+            undo.reason,
+        ]
+        for undo in undos
+    )
+    return _csv_download(
+        f"undo-log-{slugify(election.name)}.csv",
+        ["Church id", "Name", "Centre", "Session", "Ticked at", "Ticked by", "Undone at", "Undone by", "Reason"],
+        rows,
+    )
 
 
 # ---------- Undoing a tick ----------

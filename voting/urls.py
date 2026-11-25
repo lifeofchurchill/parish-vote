@@ -21,6 +21,11 @@ urlpatterns = [
     # Members with no date of birth, and saving one for a member
     path("commissioner/needs-checking/", commissioner_views.needs_checking, name="needs_checking"),
     path("commissioner/needs-checking/<int:member_id>/", commissioner_views.add_date_of_birth, name="add_dob"),
+    # Print & download: the page, the paper backup list, and the two CSV files
+    path("commissioner/records/", commissioner_views.records, name="records"),
+    path("commissioner/records/backup-list/", commissioner_views.backup_list, name="backup_list"),
+    path("commissioner/records/who-voted.csv", commissioner_views.download_voted, name="download_voted"),
+    path("commissioner/records/undo-log.csv", commissioner_views.download_undo_log, name="download_undo_log"),
     # Find a ticked voter, and the undo log
     path("commissioner/undo/", commissioner_views.undo_search, name="undo"),
     # Confirm screen (GET) and the actual undo (POST) for one tick

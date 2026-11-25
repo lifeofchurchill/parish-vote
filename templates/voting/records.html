@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Print &amp; download{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'voting/commissioner.css' %}">
+  <link rel="stylesheet" href="{% static 'voting/records.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include "voting/commissioner_nav.html" with active="records" %}
+
+{% if not election %}
+  <section class="notice">
+    <div class="notice-icon">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+    </div>
+    <h1>No election is open</h1>
+    <p>The backup list and the downloads are for the active election. Open one in the admin first.</p>
+    <a class="btn" href="{% url 'admin:voting_election_changelist' %}">Go to elections</a>
+  </section>
+
+{% else %}
+  <h1 class="page-heading">Print &amp; download</h1>
+  <p class="page-intro">The paper list keeps voting going if the app or the internet stops. The downloads are the record of the election for the parish office.</p>
+
+  <div class="records-grid">
+
+    {# ===== The paper backup list ===== #}
+    <section class="record-card">
+      <div class="record-icon" aria-hidden="true">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg>
+      </div>
+      <h2>Paper backup list</h2>
+      <p>All {{ eligible }} eligible members, A to Z, with a box to tick and a space for the time. About {{ pages }} A4 page{{ pages|pluralize }} per copy, in black and white.</p>
+
+      {# These really are steps in order, so they're numbered #}
+      <ol class="record-steps">
+        <li>On Saturday, print one copy for each centre and give it to the officials there.</li>
+        <li>If the app stops working, officials tick people on paper and write the time. Phone the other centre about anyone you're unsure of.</li>
+        <li>When the app works again, tick everyone from the paper in the app, so both centres' records join up.</li>
+        <li>After voting, collect every copy: they hold members' personal details.</li>
+      </ol>
+      <a class="btn btn-save" href="{% url 'voting:backup_list' %}">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg>
+        Open the printable list
+      </a>
+    </section>
+
+    {# ===== CSV downloads ===== #}
+    <section class="record-card">
+      <div class="record-icon" aria-hidden="true">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2"/></svg>
+      </div>
+      <h2>Downloads</h2>
+      <p>CSV files that open in Excel. Keep them somewhere safe and don't share them in group chats: they contain members' names.</p>
+
+      <ul class="download-list">
+        <li>
+          <div>
+            <strong>Who voted</strong>
+            <span>{{ voted }} {{ voted|pluralize:"person,people" }}, with centre, session, time and official</span>
+          </div>
+          <a class="btn" href="{% url 'voting:download_voted' %}" download>Download</a>
+        </li>
+        <li>
+          <div>
+            <strong>Undo log</strong>
+            <span>{{ undone }} undone tick{{ undone|pluralize }}, with the reasons</span>
+          </div>
+          <a class="btn" href="{% url 'voting:download_undo_log' %}" download>Download</a>
+        </li>
+      </ul>
+    </section>
+  </div>
+{% endif %}
+
+{% endblock %}

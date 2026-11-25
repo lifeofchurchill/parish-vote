@@ -1,0 +1,267 @@
+/* =====================================================================
+   The paper backup list: black and white, A4, for when the app is down.
+   On screen it looks like a sheet of paper under a toolbar; the toolbar
+   is never printed. Used only by backup_list.html.
+   ===================================================================== */
+
+:root {
+  --ink: #111111;        /* text and strong lines */
+  --rule: #9A9A9A;       /* thin lines between rows */
+  --shade: #E4E4E4;      /* rows of people already ticked */
+  --forest: #0C3A1E;     /* toolbar only (screen) */
+  --gold: #E9A93B;       /* Print button only (screen) */
+  --font-display: "Gloock", Georgia, serif;
+  --font-body: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  /* Print the grey shading of "Voted" rows (browsers drop backgrounds to save ink otherwise) */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: #E7E3D6;   /* a desk under the sheet, on screen */
+}
+
+/* Hidden on screen and paper, read by screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===== Toolbar (screen only) ===== */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  color: #fff;
+  background: var(--forest);
+  border-bottom: 1px solid rgba(233, 169, 59, 0.6);
+}
+.toolbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 18px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 12px 16px;
+}
+.toolbar svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.toolbar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 42px;
+  padding: 0 12px 0 6px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 10px;
+}
+.toolbar-back:hover { background: rgba(255, 255, 255, 0.1); }
+.toolbar-options { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 0 auto 0 0; }
+.toolbar-options label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: #CFE0C8; }
+.toolbar-options select {
+  min-height: 42px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: #0F2418;
+  background: #fff;
+  border: 0;
+  border-radius: 10px;
+}
+.toolbar-count { margin: 0 0 11px; font-size: 14px; color: #CFE0C8; }
+.toolbar-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 22px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  color: #06200F;
+  background: linear-gradient(180deg, #F2B954, var(--gold));
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.toolbar-print:hover { background: linear-gradient(180deg, #F5C36A, #EDB045); }
+.toolbar :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* ===== The sheet: A4 on screen ===== */
+.sheet {
+  width: 210mm;
+  max-width: 100%;
+  margin: 24px auto 48px;
+  padding: 14mm 11mm 16mm;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 28px 60px -34px rgba(0, 0, 0, 0.5);
+}
+
+/* First-page heading */
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 5mm;
+  padding-bottom: 4mm;
+  border-bottom: 0.6mm solid var(--ink);
+}
+.sheet-logo { flex: none; width: 17mm; height: 17mm; border-radius: 50%; }
+.sheet-type { margin: 0; font-size: 9.5pt; font-weight: 800; }
+.sheet-head h1 {
+  margin: 0.6mm 0 1mm;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 22pt;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+.sheet-sub { margin: 0; font-size: 10pt; }
+
+/* Centre / Session / Official, with lines to write on */
+.sheet-fields {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 6mm;
+  margin: 5mm 0 4mm;
+  font-size: 10pt;
+  font-weight: 800;
+}
+.sheet-fields p { display: flex; align-items: flex-end; gap: 2mm; margin: 0; }
+.fill { flex: 1; min-height: 6mm; font-weight: 500; border-bottom: 0.3mm solid var(--ink); }
+
+/* The rules, in a box */
+.sheet-rules {
+  margin: 0 0 5mm;
+  padding: 3mm 4mm;
+  font-size: 9pt;
+  line-height: 1.4;
+  border: 0.3mm solid var(--ink);
+}
+.sheet-rules p { margin: 0; }
+.sheet-rules p + p { margin-top: 1.3mm; }
+
+/* ===== The register ===== */
+.register {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;       /* the column widths below are kept exactly */
+  font-size: 9.5pt;
+}
+.register th,
+.register td {
+  padding: 1.5mm 1.4mm;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 0.25mm solid var(--rule);
+}
+/* Column widths, set on the <col> elements (they add up to the 188 mm between A4 margins) */
+col.col-box { width: 7mm; }
+col.col-name { width: 58mm; }
+col.col-age { width: 9mm; }
+col.col-community { width: 33mm; }
+col.col-phone { width: 22mm; }
+col.col-id { width: 13mm; }
+col.col-time { width: 46mm; }
+
+/* Headings: a title line, then the column names */
+.register-title th {
+  padding: 0 0 1.5mm;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 10.5pt;
+  border-bottom: 0;
+}
+.register thead tr:last-child th {
+  font-size: 8.5pt;
+  font-weight: 800;
+  border-bottom: 0.5mm solid var(--ink);
+}
+
+/* A, B, C... */
+.letter-row th {
+  padding: 3mm 1.4mm 1mm;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 13pt;
+  border-bottom: 0.5mm solid var(--ink);
+}
+
+td.col-name { font-weight: 700; overflow-wrap: anywhere; }
+td.col-community { font-size: 9pt; overflow-wrap: anywhere; }
+td.col-age,
+td.col-id,
+td.col-phone { font-variant-numeric: tabular-nums; }
+td.col-phone { font-size: 9pt; }
+
+/* The tick box */
+.box {
+  display: block;
+  width: 4.6mm;
+  height: 4.6mm;
+  border: 0.45mm solid var(--ink);
+  border-radius: 0.6mm;
+}
+
+/* Already ticked in the app: shaded row, filled box, "Voted 9:41 a.m." and the place */
+.is-voted td { background: var(--shade); }
+.is-voted .box { background: var(--ink); }
+.is-voted .col-time { font-size: 8.5pt; font-weight: 800; line-height: 1.25; }
+.is-voted .place { display: block; font-weight: 500; }   /* where, on its own line */
+
+.register-empty { padding: 8mm 0; text-align: center; font-size: 11pt; }
+
+/* ===== Printing ===== */
+@page {
+  size: A4 portrait;
+  margin: 12mm 11mm 14mm;
+
+  /* At the foot of every page (recent Chrome and Edge; other browsers leave it out) */
+  @bottom-left {
+    content: "Confidential: members' personal details. Return to the Electoral Commissioner.";
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-size: 7.5pt;
+    color: #333;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-size: 7.5pt;
+    color: #333;
+  }
+}
+
+@media print {
+  body { background: #fff; }
+  .toolbar { display: none; }
+  /* The page margins come from @page, so the sheet itself has none */
+  .sheet { width: auto; margin: 0; padding: 0; box-shadow: none; }
+  /* Column names at the top of every page; never split a row across two pages */
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  .letter-row { break-after: avoid; }
+}
