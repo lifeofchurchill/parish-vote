@@ -35,16 +35,37 @@ class PollingCentreAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
 
+class SourceFilter(admin.SimpleListFilter):
+    """Filter on the right of the member list: from the church list, or added on the day."""
+    title = "where from"
+    parameter_name = "source"
+
+    def lookups(self, request, model_admin):
+        return [("church", "Church list"), ("added", "Added by an official")]
+
+    def queryset(self, request, queryset):
+        if self.value() == "church":
+            return queryset.filter(added_at__isnull=True)
+        if self.value() == "added":
+            return queryset.filter(added_at__isnull=False)
+        return queryset
+
+
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
     # Columns shown in the member list
-    list_display = ("full_name", "church_id", "date_of_birth", "age", "community")
+    list_display = ("full_name", "church_id", "date_of_birth", "age", "community", "source")
     # Search covers every phone number, not just the first one
     search_fields = ("full_name", "church_id", "phone", "other_phones")
-    # "Date of birth: Empty" lists everyone the Needs checking page is about
-    list_filter = (("date_of_birth", admin.EmptyFieldListFilter), "community")
-    # Set only by the Needs checking page, so they can be read here but not typed in
-    readonly_fields = ("dob_added_by", "dob_added_at")
+    # "Date of birth: Empty" lists everyone the Needs checking page is about;
+    # "Added by an official" lists everyone added because they weren't on the church list
+    list_filter = (SourceFilter, ("date_of_birth", admin.EmptyFieldListFilter), "community")
+    # Set only by the app (Needs checking page, or an official adding someone),
+    # so they can be read here but not typed in
+    readonly_fields = (
+        "dob_added_by", "dob_added_at",
+        "added_by", "added_at", "added_centre", "matches_when_added",
+    )
 
     def get_queryset(self, request):
         # Look up the active election ONCE per page, and attach its date to every row,
@@ -58,6 +79,10 @@ class MemberAdmin(admin.ModelAdmin):
     @admin.display(description="Age on election day")
     def age(self, obj):
         return obj.age_on(obj.age_date)
+
+    @admin.display(description="Where from")
+    def source(self, obj):
+        return "Added by an official" if obj.is_added_on_the_day else "Church list"
 
 
 @admin.register(OrganizerProfile)

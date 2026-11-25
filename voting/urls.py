@@ -15,6 +15,8 @@ urlpatterns = [
     path("session/", views.set_session, name="set_session"),
     # Confirm screen (GET) and the actual tick (POST) for one member
     path("tick/<int:member_id>/", views.tick, name="tick"),
+    # Someone who isn't on the church list: add them and tick them in one step
+    path("add/", views.add_member, name="add_member"),
 
     # Electoral Commissioner pages (staff accounts only)
     path("commissioner/", commissioner_views.dashboard, name="dashboard"),

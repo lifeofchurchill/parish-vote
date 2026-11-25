@@ -1,0 +1,131 @@
+/* =====================================================================
+   Adding someone who isn't on the church list: the "Add" buttons on the
+   check-in page, the "Is it one of these?" panel and the add form.
+   Loaded after checkin.css, so it uses the same green & gold tokens
+   from app.css and the same voter cards and buttons.
+   ===================================================================== */
+
+/* ===== On the check-in page ===== */
+/* "Add someone new" under "No eligible voter matches" */
+.btn-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+  border-radius: 16px;
+}
+.btn-add svg { flex: none; width: 22px; height: 22px; }
+
+/* "Not any of these? Add someone..." under the results */
+.results-add {
+  margin: 18px 4px 0;
+  font-size: 15px;
+  text-align: center;
+  color: var(--ink-muted);
+}
+.results-add a {
+  font-weight: 700;
+  color: var(--forest-700);
+  text-underline-offset: 3px;
+}
+
+/* ===== "Is it one of these people?" ===== */
+/* Warm gold panel: stop and look before adding a second record */
+.match-panel {
+  margin: 0 0 20px;
+  padding: 20px 16px 18px;
+  background: #FFF8E8;
+  border: 1px solid #F0DDB2;
+  border-radius: 26px;
+}
+.match-panel h2 { margin: 0 6px 6px; font-size: 26px; letter-spacing: -0.015em; }
+.match-intro { margin: 0 6px 16px; color: var(--ink-muted); }
+
+/* What to do with a match that can't be ticked here */
+.match-note {
+  margin: 12px 0 0;
+  padding: 10px 13px;
+  font-size: 15px;
+  color: var(--ink-muted);
+  background: var(--ivory);
+  border-radius: 14px;
+}
+
+/* Extra status pills (the same colours as on the Commissioner's pages) */
+.status-check { color: #6B4806; background: #FBE9C2; }                 /* no date of birth */
+.status-out { color: var(--ink-muted); background: var(--ivory-deep); } /* outside the age rule */
+
+/* ===== The form ===== */
+.add-card {
+  padding: 24px 20px 20px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 30px;
+  box-shadow: 0 1px 2px rgba(12, 58, 30, 0.05), 0 34px 64px -42px rgba(12, 58, 30, 0.65);
+}
+.add-card-title { margin: 0 0 18px; font-size: 26px; letter-spacing: -0.015em; }
+
+.field { margin-bottom: 20px; }
+.field label { margin: 0 0 6px; font-size: 17px; }
+
+/* "optional", as a small quiet pill after the label */
+.optional {
+  margin-left: 6px;
+  padding: 2px 9px;
+  font-size: 13px;
+  font-weight: 700;
+  vertical-align: 2px;
+  color: var(--ink-muted);
+  background: var(--ivory-deep);
+  border-radius: 999px;
+}
+.field-hint { margin: -2px 0 8px; font-size: 14px; color: var(--ink-muted); }
+
+/* One style for all four inputs, including the date picker */
+.text-input {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 18px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #CDD2C4;
+  border-radius: 14px;
+  appearance: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.text-input:focus { outline: none; border-color: var(--forest-700); box-shadow: 0 0 0 4px rgba(233, 169, 59, 0.4); }
+.text-input[aria-invalid="true"] { border-color: var(--red); box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.12); }
+/* iPhones centre the date by default; keep it left like the other fields */
+.text-input::-webkit-date-and-time-value { text-align: left; }
+
+/* "17 on election day", worked out while they pick the date */
+.age-check { margin: 8px 0 0; font-size: 15px; font-weight: 700; }
+.age-check:empty { display: none; }
+.age-check.is-ok { color: var(--forest-700); }
+.age-check.is-out { color: var(--red); }
+
+.field-error { margin: 8px 0 0; font-size: 15px; font-weight: 700; color: var(--red); }
+
+/* "Ticked in After 9:30 a.m. Mass" above the button */
+.add-session {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 4px 0 4px;
+  padding: 12px 14px;
+  font-size: 15px;
+  color: var(--forest-900);
+  background: var(--forest-100);
+  border-radius: 14px;
+}
+.add-session svg { flex: none; width: 20px; height: 20px; }
+
+/* ===== Wider screens: a bit more room ===== */
+@media (min-width: 700px) {
+  .add-card { padding: 32px 32px 26px; }
+  .match-panel { padding: 24px 22px 22px; }
+}

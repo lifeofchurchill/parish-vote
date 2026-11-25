@@ -5,6 +5,8 @@
 {# This page's own styles, on top of style.css and app.css #}
 {% block extra_head %}
   <link rel="stylesheet" href="{% static 'voting/checkin.css' %}">
+  {# The "Add them" buttons for people who aren't on the church list #}
+  <link rel="stylesheet" href="{% static 'voting/add_member.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -157,6 +159,7 @@
       <ul>
         <li>Type any part of their name. Word order doesn't matter: "van brooks" finds Brooks Van.</li>
         <li>Or type at least 4 digits of their phone number.</li>
+        <li>Not on the church list? Search first, then you can add them.</li>
       </ul>
     </section>
 
@@ -173,8 +176,13 @@
       <ul>
         <li>Check the spelling, or try just their first or last name.</li>
         <li>Try their phone number instead.</li>
-        <li>Still not found? They may be outside the age rule or missing from the church list. Send them to the Electoral Commissioner.</li>
+        <li>Still not found? They may be missing from the church list. If they're a parishioner, add them.</li>
       </ul>
+      {# Opens the add form, started with what was searched #}
+      <a href="{% url 'voting:add_member' %}?q={{ query|urlencode }}" class="btn btn-block btn-add">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 11-6.6M18 14.5v6M15 17.5h6"/></svg>
+        <span>Add someone new</span>
+      </a>
     </section>
 
   {% else %}
@@ -224,6 +232,12 @@
         </li>
       {% endfor %}
     </ul>
+
+    {# The right person isn't among the results #}
+    <p class="results-add">
+      Not any of these?
+      <a href="{% url 'voting:add_member' %}?q={{ query|urlencode }}">Add someone who isn't on the list</a>
+    </p>
   {% endif %}
 {% endif %}
 

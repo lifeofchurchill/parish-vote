@@ -6,7 +6,10 @@ Flow on election day:
   2. They choose the session (which Mass they're checking voters in after).
   3. They search for a voter by name or phone.
   4. They confirm and tick the voter.
+  Not on the church list? The official adds them, and they're ticked in the same step.
 """
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
@@ -15,6 +18,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from .cleaning import clean_name
+from .forms import AddMemberForm
 from .models import Election, Member, VoteCheckIn, VotingSession
 
 # Key used to remember the official's chosen session between page loads
@@ -25,8 +30,9 @@ SESSION_KEY = "voting_session_id"
 MIN_NAME_LETTERS = 2     # "a" would match half the parish
 MIN_PHONE_DIGITS = 4     # "02" would match almost every number
 MAX_RESULTS = 25         # keeps the page fast on a phone
+MAX_MATCHES = 10         # "Is it one of these?" before adding someone new
 
-# If the same official ticks the same person twice within this many seconds,
+# If the same official ticks (or adds) the same person twice within this many seconds,
 # it's a double-tap on a slow connection, not a second vote
 DOUBLE_TAP_SECONDS = 60
 
@@ -125,6 +131,74 @@ def _search(election, query):
     )
     # One more than we show, so we know whether there were more matches
     return list(members[: MAX_RESULTS + 1]), None
+
+
+def _possible_matches(election, name, dob, phone):
+    """
+    People already in the system who might be the person being added, so nobody gets
+    a second record (and with it a second vote).
+
+    Looks at everyone, not only eligible members: someone the church list has with a
+    different or missing date of birth is exactly who an official might add again by mistake.
+    A member counts as a possible match if they have:
+      - all the same names, in any order ("Mensah Ama" for "Ama Mensah"), or
+      - the same date of birth and at least one name in common, or
+      - the same phone number.
+    """
+    words = name.split()
+
+    same_names = Q()
+    for word in words:
+        same_names &= Q(full_name__icontains=word)
+
+    one_name_in_common = Q()
+    for word in words:
+        one_name_in_common |= Q(full_name__icontains=word)
+
+    conditions = same_names | (Q(date_of_birth=dob) & one_name_in_common)
+    if phone:
+        conditions |= Q(phone=phone) | Q(other_phones__contains=phone)
+
+    matches = list(
+        Member.objects.filter(conditions).prefetch_related(
+            Prefetch(
+                "checkins",
+                queryset=VoteCheckIn.objects.filter(election=election)
+                                            .select_related("session__centre", "ticked_by"),
+                to_attr="records",
+            )
+        )[:MAX_MATCHES]
+    )
+
+    # What each match means for this election, so the official knows what to do
+    eligible_ids = set(
+        Member.objects.eligible(election)
+        .filter(pk__in=[m.pk for m in matches])
+        .values_list("pk", flat=True)
+    )
+    for member in matches:
+        member.initials = _initials(member.full_name)
+        member.age = member.age_on(election.date)
+        member.record = member.records[0] if member.records else None
+        if member.record:
+            member.match_status = "voted"        # already voted: stop
+        elif member.pk in eligible_ids:
+            member.match_status = "can_tick"     # it's them: tick this record instead
+        elif member.date_of_birth is None:
+            member.match_status = "no_dob"       # on the list with no birth date
+        else:
+            member.match_status = "outside"      # on the list, outside the age rule
+    return matches
+
+
+def _initial_from_search(query):
+    """Start the "add" form with what the official already typed in the search box."""
+    if not query:
+        return {}
+    compact = query.replace(" ", "").replace("+", "").replace("-", "")
+    if compact.isdigit():
+        return {"phone": query}
+    return {"full_name": clean_name(query)}
 
 
 # ---------- pages ----------
@@ -274,4 +348,98 @@ def tick(request, member_id):
         "session": session,
         "existing": existing,
         "query": request.GET.get("q", ""),   # so "Back to results" returns to the same search
+    })
+
+
+@login_required
+def add_member(request):
+    """
+    Someone who isn't on the church list.
+    GET:  the form, started with whatever the official searched for.
+    POST: first show anyone already in the system who might be them ("Is it one of these?").
+          Once the official has seen those and says it's none of them, add the person and
+          tick them as voted, together.
+    """
+    election = Election.objects.active()
+    profile = _get_profile(request)
+    if election is None or profile is None:
+        # The check-in page explains what's wrong
+        return redirect("voting:checkin")
+
+    session = _current_session(request, election, profile)
+    if session is None:
+        messages.error(request, "Choose your session before adding anyone.")
+        return redirect("voting:checkin")
+
+    # The search they came from, so "Back to search" returns to it
+    query = request.GET.get("q", request.POST.get("q", "")).strip()
+    matches = []
+
+    if request.method == "POST":
+        form = AddMemberForm(request.POST, election=election)
+        if form.is_valid():
+            data = form.cleaned_data
+
+            # 1. A double-tap on slow data: this official added this same person moments ago.
+            #    The first tap worked, so report success instead of adding them twice.
+            just_added = Member.objects.filter(
+                added_by=request.user,
+                full_name=data["full_name"],
+                date_of_birth=data["date_of_birth"],
+                added_at__gte=timezone.now() - timedelta(seconds=DOUBLE_TAP_SECONDS),
+            ).exists()
+            if just_added:
+                messages.success(request, f"{data['full_name']} is added and ticked. Hand over the ballot paper.")
+                return redirect("voting:checkin")
+
+            # 2. Anyone who might already be them? The page lists the ones shown ("seen"),
+            #    so a match the official hasn't seen yet (e.g. after changing the phone) still stops them.
+            matches = _possible_matches(
+                election, data["full_name"], data["date_of_birth"], data["phone"]
+            )
+            seen = {int(pk) for pk in request.POST.getlist("seen") if pk.isdigit()}
+            not_seen_yet = [m for m in matches if m.pk not in seen]
+
+            # 3. None, or they've seen them all and said it's none of them: add and tick
+            if not not_seen_yet:
+                # atomic(): both saved, or neither (never a new member without their tick)
+                with transaction.atomic():
+                    member = Member.objects.create(
+                        church_id=None,           # not on the church list, so no church id
+                        full_name=data["full_name"],
+                        date_of_birth=data["date_of_birth"],
+                        phone=data["phone"],
+                        community=data["community"],
+                        added_by=request.user,
+                        added_at=timezone.now(),
+                        added_centre=profile.centre,
+                        matches_when_added=len(matches),
+                    )
+                    VoteCheckIn.objects.create(
+                        election=election,
+                        member=member,
+                        session=session,
+                        ticked_by=request.user,
+                    )
+                messages.success(request, f"{member.full_name} is added and ticked. Hand over the ballot paper.")
+                # Redirect after POST, like ticking: a refresh can't add them again
+                return redirect("voting:checkin")
+    else:
+        form = AddMemberForm(election=election, initial=_initial_from_search(query))
+
+    # Community names already on the list, offered as suggestions while typing
+    communities = (
+        Member.objects.exclude(community="")
+        .order_by("community")
+        .values_list("community", flat=True)
+        .distinct()
+    )
+    return render(request, "voting/add_member.html", {
+        "centre_label": profile.centre.name,
+        "session": session,
+        "form": form,
+        "matches": matches,
+        "query": query,
+        "communities": communities,
+        "today": timezone.localdate(),   # the date picker can't go past today
     })

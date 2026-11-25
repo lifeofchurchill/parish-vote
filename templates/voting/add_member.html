@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Add someone{% endblock %}
+
+{# Voter cards, buttons and the back link come from checkin.css; the form from add_member.css #}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'voting/checkin.css' %}">
+  <link rel="stylesheet" href="{% static 'voting/add_member.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# Back to the search they came from #}
+<a class="back-link" href="{% url 'voting:checkin' %}{% if query %}?q={{ query|urlencode }}{% endif %}">
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 7l-5 5 5 5"/></svg>
+  Back to search
+</a>
+
+<header>
+  <h1 class="page-heading">Add someone who isn't on the list</h1>
+  <p class="page-intro">For parishioners missing from the church list. Check each detail with them, then they're ticked as voted in the same step.</p>
+</header>
+
+{% if matches %}
+  {# Anyone already in the system who might be them: use their record instead of adding a second one #}
+  <section class="match-panel" aria-labelledby="match-title">
+    <h2 id="match-title">Is it one of these people?</h2>
+    <p class="match-intro">They may already be on the list, spelt differently or sharing a phone number. If one of these is them, use that record.</p>
+
+    <ul class="results">
+      {% for member in matches %}
+        <li class="voter-card{% if member.match_status == 'voted' %} is-voted{% endif %}">
+          <div class="voter-head">
+            <span class="voter-initials" aria-hidden="true">{{ member.initials }}</span>
+            <h3 class="voter-name">{{ member.full_name }}</h3>
+            {# Status in words, not just colour #}
+            {% if member.match_status == "voted" %}
+              <span class="status status-voted">Voted</span>
+            {% elif member.match_status == "can_tick" %}
+              <span class="status status-open">Not voted</span>
+            {% elif member.match_status == "no_dob" %}
+              <span class="status status-check">No birth date</span>
+            {% else %}
+              <span class="status status-out">Outside age rule</span>
+            {% endif %}
+            <p class="voter-meta">
+              {% if member.age is not None %}<span>{{ member.age }} yrs</span>{% endif %}
+              {% if member.community %}<span>{{ member.community }}</span>{% endif %}
+              {% if member.masked_phone %}<span>{{ member.masked_phone }}</span>{% endif %}
+              {% if member.is_added_on_the_day %}<span>Added by an official</span>{% endif %}
+            </p>
+          </div>
+
+          {% if member.match_status == "voted" %}
+            {# Already voted: where, when and who. Same as on the search results. #}
+            <p class="voter-voted">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+              <span>
+                Ticked at <strong>{{ member.record.session.centre.name }}</strong>,
+                {{ member.record.ticked_at|time:"g:i a" }}
+                by {{ member.record.ticked_by.get_full_name|default:member.record.ticked_by.username }}.
+                If this is them, do not give a ballot paper.
+              </span>
+            </p>
+          {% elif member.match_status == "can_tick" %}
+            {# It's them: tick this record (the usual confirm screen) instead of adding a new one #}
+            <a href="{% url 'voting:tick' member.pk %}?q={{ query|urlencode }}" class="btn btn-tick btn-block">This is them: tick</a>
+          {% elif member.match_status == "no_dob" %}
+            <p class="match-note">On the church list without a date of birth. If this is them, the Electoral Commissioner can add it on Needs checking, and then you can tick them.</p>
+          {% else %}
+            <p class="match-note">On the church list, but {{ member.age }} on election day by the church's records. If this is them and that's wrong, send them to the Electoral Commissioner.</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+
+{# The form. data-* values let the script below show their age as soon as a date is picked. #}
+<form method="post" action="{% url 'voting:add_member' %}" class="add-card" id="add-form" novalidate
+      data-election-date="{{ election.date|date:'Y-m-d' }}"
+      data-min-age="{{ election.min_age|default_if_none:'' }}"
+      data-max-age="{{ election.max_age|default_if_none:'' }}"
+      data-age-rule="{{ election.age_rule }}">
+  {% csrf_token %}
+  {# The search they came from, and which possible matches they've now seen #}
+  <input type="hidden" name="q" value="{{ query }}">
+  {% for member in matches %}
+    <input type="hidden" name="seen" value="{{ member.pk }}">
+  {% endfor %}
+
+  {% if matches %}
+    <h2 class="add-card-title">None of these? Add them</h2>
+  {% endif %}
+
+  {# Full name #}
+  <div class="field">
+    <label for="id_full_name">Full name</label>
+    <input type="text" name="full_name" id="id_full_name" class="text-input" maxlength="150"
+           value="{{ form.full_name.value|default:'' }}"
+           autocomplete="off" autocapitalize="words" spellcheck="false"
+           {% if form.full_name.errors %}aria-invalid="true" aria-describedby="full_name-error"{% endif %}>
+    {% if form.full_name.errors %}
+      <p class="field-error" id="full_name-error">{{ form.full_name.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  {# Date of birth: required, it's how the age rule is checked #}
+  <div class="field">
+    <label for="id_date_of_birth">Date of birth</label>
+    <p class="field-hint" id="dob-help">Needed to check the age rule ({{ election.age_rule }}).</p>
+    <input type="date" name="date_of_birth" id="id_date_of_birth" class="text-input"
+           min="1900-01-01" max="{{ today|date:'Y-m-d' }}"
+           value="{{ form.date_of_birth.value|default:'' }}"
+           aria-describedby="dob-help dob-age{% if form.date_of_birth.errors %} date_of_birth-error{% endif %}"
+           {% if form.date_of_birth.errors %}aria-invalid="true"{% endif %}>
+    {# Filled in by the script: "17 on election day" #}
+    <p class="age-check" id="dob-age" aria-live="polite"></p>
+    {% if form.date_of_birth.errors %}
+      <p class="field-error" id="date_of_birth-error">{{ form.date_of_birth.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  {# Phone: optional #}
+  <div class="field">
+    <label for="id_phone">Phone number <span class="optional">optional</span></label>
+    <input type="tel" name="phone" id="id_phone" class="text-input" maxlength="30"
+           value="{{ form.phone.value|default:'' }}" inputmode="tel" autocomplete="off"
+           {% if form.phone.errors %}aria-invalid="true" aria-describedby="phone-error"{% endif %}>
+    {% if form.phone.errors %}
+      <p class="field-error" id="phone-error">{{ form.phone.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  {# Community: optional, with the communities already on the list as suggestions #}
+  <div class="field">
+    <label for="id_community">Community <span class="optional">optional</span></label>
+    <input type="text" name="community" id="id_community" class="text-input" maxlength="100"
+           value="{{ form.community.value|default:'' }}" list="community-list"
+           autocomplete="off" autocapitalize="words"
+           {% if form.community.errors %}aria-invalid="true" aria-describedby="community-error"{% endif %}>
+    <datalist id="community-list">
+      {% for community in communities %}<option value="{{ community }}">{% endfor %}
+    </datalist>
+    {% if form.community.errors %}
+      <p class="field-error" id="community-error">{{ form.community.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  {# Which session the tick goes into #}
+  <p class="add-session">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+    <span>Ticked in <strong>{{ session.label }}</strong></span>
+  </p>
+
+  <button type="submit" class="btn btn-tick btn-block btn-xl" id="add-submit">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    <span>Add and tick as voted</span>
+  </button>
+  <a class="btn btn-quiet btn-block" href="{% url 'voting:checkin' %}{% if query %}?q={{ query|urlencode }}{% endif %}">Cancel</a>
+
+  <p class="confirm-note">You'll be recorded as the official who added them. The Electoral Commissioner reviews everyone added on the day.</p>
+</form>
+
+<script>
+  (() => {
+    const form = document.getElementById("add-form");
+
+    // Slow mobile data: disable the button after the first tap, so it can't be sent twice
+    const submit = document.getElementById("add-submit");
+    const label = submit.querySelector("span");
+    const labelText = label.textContent;
+    form.addEventListener("submit", () => {
+      submit.disabled = true;
+      label.textContent = "Adding…";
+    });
+    // Coming back with the browser's Back button: make the button usable again
+    window.addEventListener("pageshow", () => {
+      submit.disabled = false;
+      label.textContent = labelText;
+    });
+
+    // Their age on election day, shown as soon as a date is picked, so a date outside
+    // the age rule is spotted before pressing the button (the server checks it again anyway)
+    const dob = document.getElementById("id_date_of_birth");
+    const ageCheck = document.getElementById("dob-age");
+    const [ey, em, ed] = form.dataset.electionDate.split("-").map(Number);
+    const minAge = form.dataset.minAge === "" ? null : Number(form.dataset.minAge);
+    const maxAge = form.dataset.maxAge === "" ? null : Number(form.dataset.maxAge);
+
+    function showAge() {
+      ageCheck.textContent = "";
+      ageCheck.classList.remove("is-ok", "is-out");
+      const [y, m, d] = dob.value.split("-").map(Number);
+      if (!y || y < 1900) return;
+      // Subtract 1 if their birthday hasn't come yet on election day
+      const age = ey - y - ((em < m || (em === m && ed < d)) ? 1 : 0);
+      if (age < 0) return;
+      const outside = (minAge !== null && age < minAge) || (maxAge !== null && age > maxAge);
+      ageCheck.textContent = outside
+        ? `${age} on election day: outside the age rule (${form.dataset.ageRule})`
+        : `${age} on election day`;
+      ageCheck.classList.add(outside ? "is-out" : "is-ok");
+    }
+    // Picking a new date clears the old error from the server; the age check takes over
+    function dateChanged() {
+      const serverError = document.getElementById("date_of_birth-error");
+      if (serverError) serverError.remove();
+      dob.removeAttribute("aria-invalid");
+      showAge();
+    }
+    dob.addEventListener("input", dateChanged);
+    dob.addEventListener("change", dateChanged);
+    // On load, only when the server hasn't already said what's wrong with the date
+    if (!document.getElementById("date_of_birth-error")) showAge();
+  })();
+</script>
+
+{% endblock %}

@@ -4,7 +4,8 @@ Database tables for the parish election check-in system.
 Election        -> one election (name, date, age rule); exactly one is "active" at a time
 PollingCentre   -> a place where people vote (e.g. St. Thomas More, Achimota)
 VotingSession   -> a voting window at a centre for one election (e.g. After 7:00 a.m. Mass)
-Member          -> a person copied from the church's CSV export
+Member          -> a person copied from the church's CSV export, or added by an official
+                   on election day because they were missing from it
 OrganizerProfile-> links an official's login to the centre they work at
 VoteCheckIn     -> proof that a member has voted in an election (one per member per election)
 TickUndo        -> permanent record of a tick the Electoral Commissioner removed, and why
@@ -154,10 +155,16 @@ class MemberQuerySet(models.QuerySet):
         """Members with no date of birth: can't tell if they meet an age rule."""
         return self.filter(date_of_birth__isnull=True)
 
+    def added_on_the_day(self):
+        """Members an official added because they weren't on the church list."""
+        return self.filter(added_at__isnull=False)
+
 
 class Member(models.Model):
-    # "id" column in the church export; lets a re-import update instead of duplicate
-    church_id = models.CharField(max_length=50, unique=True)
+    # "id" column in the church export; lets a re-import update instead of duplicate.
+    # Empty for someone an official added on the day: they have no church id yet.
+    # null=True (not just blank) so "unique" still allows many people without an id.
+    church_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
     # "name" column. Word order varies in the church data, so search matches words in any order
     full_name = models.CharField(max_length=150)
     # "birthDate" column. Optional because some church records may be missing it
@@ -168,7 +175,7 @@ class Member(models.Model):
     other_phones = models.CharField(max_length=100, blank=True, default="")
     # "community" column, e.g. "Christian Village". Helps officials tell people apart
     community = models.CharField(max_length=100, blank=True, default="")
-    # Last time this row was created or updated by an import
+    # Last time this row was created or updated (by an import, or by an official adding them)
     imported_at = models.DateTimeField(auto_now=True)
     # Filled in when the Electoral Commissioner adds a missing date of birth on the
     # "Needs checking" page: who and when. A re-import keeps that date, unless the
@@ -179,6 +186,20 @@ class Member(models.Model):
     )
     dob_added_at = models.DateTimeField(null=True, blank=True)
 
+    # Filled in when an official adds someone who isn't on the church list: who added them,
+    # when, at which centre, and how many possible matches they were shown first (and decided
+    # it wasn't any of them). The Electoral Commissioner reviews these after the election.
+    added_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        null=True, blank=True, related_name="members_added",
+    )
+    added_at = models.DateTimeField(null=True, blank=True)
+    added_centre = models.ForeignKey(
+        PollingCentre, on_delete=models.PROTECT,
+        null=True, blank=True, related_name="members_added",
+    )
+    matches_when_added = models.PositiveSmallIntegerField(default=0)
+
     # Lets us write Member.objects.eligible(election)
     objects = MemberQuerySet.as_manager()
 
@@ -186,7 +207,12 @@ class Member(models.Model):
         ordering = ["full_name"]
 
     def __str__(self):
-        return f"{self.full_name} ({self.church_id})"
+        return f"{self.full_name} ({self.church_id or 'added on the day'})"
+
+    @property
+    def is_added_on_the_day(self):
+        """True for someone an official added because they weren't on the church list."""
+        return self.added_at is not None
 
     def age_on(self, day):
         """Age on a given day, e.g. member.age_on(election.date)."""
