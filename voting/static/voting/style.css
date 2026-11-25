@@ -414,3 +414,25 @@ input:focus { border-color: var(--violet-700); box-shadow: 0 0 0 4px rgba(233, 1
   }
   .login-card h2 { font-size: 34px; }
 }
+
+/* =====================================================================
+   Sign-in logo: a round 80px disc on phones, 96px on laptops.
+   ".login-hero-text .login-logo" is more specific than ".login-logo",
+   so these sizes win over any earlier .login-logo rule in this file.
+   ===================================================================== */
+.login-hero-text .login-logo {
+  display: block;
+  flex: none;              /* never squeezed, even inside a row */
+  width: 80px;
+  min-width: 80px;
+  max-width: none;
+  height: 80px;
+  aspect-ratio: 1 / 1;
+  padding: 6px;
+  object-fit: contain;     /* the whole logo fits inside the circle, never stretched */
+  background: #fff;
+  border-radius: 50%;
+}
+@media (min-width: 900px) {
+  .login-hero-text .login-logo { width: 96px; min-width: 96px; height: 96px; }
+}

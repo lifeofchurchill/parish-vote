@@ -119,6 +119,47 @@
       <p class="dash-empty">No dates have been added here yet.</p>
     {% endif %}
   </section>
+
+  {# ===== Below (on laptops, under the left column): people officials added on the day ===== #}
+  {% if election %}
+    <section aria-labelledby="walk-ins-title">
+      <h2 class="dash-section-title" id="walk-ins-title">Added by officials{% if walk_ins %} ({{ walk_ins|length }}){% endif %}</h2>
+      <p class="undo-log-intro">People who weren't on the church list. After the election, check them with the parish office. Start with any that were shown possible matches.</p>
+      {% if walk_ins %}
+        <ul class="results">
+          {% for member in walk_ins %}
+            <li class="voter-card" id="member-{{ member.pk }}">
+              <div class="voter-head">
+                <span class="voter-initials" aria-hidden="true">{{ member.initials }}</span>
+                <h3 class="voter-name">{{ member.full_name }}</h3>
+                {% if member.voted %}
+                  <span class="status status-ok">Voted</span>
+                {% else %}
+                  <span class="status status-out">Tick undone</span>
+                {% endif %}
+                <p class="voter-meta">
+                  <span>Born {{ member.date_of_birth|date:"j M Y" }}</span>
+                  {% if member.age is not None %}<span>{{ member.age }} on election day</span>{% endif %}
+                  {% if member.community %}<span>{{ member.community }}</span>{% endif %}
+                  {% if member.masked_phone %}<span>{{ member.masked_phone }}</span>{% endif %}
+                </p>
+              </div>
+              <p class="added-by">Added by {{ member.added_by_name }} at {{ member.added_centre.name }}, {{ member.added_at|date:"j M, g:i a" }}</p>
+              {# The official was shown people who might be the same person, and added them anyway #}
+              {% if member.matches_when_added %}
+                <p class="added-by">
+                  <span class="status status-check">Check</span>
+                  Shown {{ member.matches_when_added }} possible match{{ member.matches_when_added|pluralize:"es" }} first. Make sure this isn't someone already on the list.
+                </p>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="dash-empty">Nobody has been added yet.</p>
+      {% endif %}
+    </section>
+  {% endif %}
 </div>
 
 {% endblock %}

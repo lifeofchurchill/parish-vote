@@ -1,6 +1,7 @@
 """
 Pages for the Electoral Commissioner: live turnout, adding missing dates of birth,
-undoing a tick made by mistake, and the paper backup list and downloads.
+reviewing people officials added on the day, undoing a tick made by mistake,
+and the paper backup list and downloads.
 
 Only staff accounts can open them (the "Staff status" box on the user in the admin).
 Officials who try get a "This page is for the Electoral Commissioner" page instead.
@@ -14,7 +15,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Max, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -201,18 +202,40 @@ def _needs_checking_context(election):
         member.can_vote = member.pk in eligible_ids
         member.added_by_name = _who(member.dob_added_by) if member.dob_added_by else "the admin"
 
+    # People officials added because they weren't on the church list, in THIS election
+    # (they were ticked in it when added, even if that tick was later undone). Newest first.
+    walk_ins = []
+    if election:
+        walk_ins = list(
+            Member.objects.added_on_the_day()
+            .filter(Q(checkins__election=election) | Q(undos__election=election))
+            .distinct()
+            .select_related("added_by", "added_centre")
+            .prefetch_related(
+                Prefetch("checkins", queryset=VoteCheckIn.objects.filter(election=election), to_attr="records")
+            )
+            .order_by("-added_at")
+        )
+    for member in walk_ins:
+        member.initials = _initials(member.full_name)
+        member.age = member.age_on(election.date)
+        member.voted = bool(member.records)
+        member.added_by_name = _who(member.added_by)
+
     return {
         "role_label": ROLE_LABEL,
         "election": election,
         "missing": missing,
         "added": added,
+        "walk_ins": walk_ins,
         "today": timezone.localdate(),   # the latest date the date picker allows
     }
 
 
 @commissioner_required
 def needs_checking(request):
-    """Members the system can't check against the age rule, and the dates added here."""
+    """Members the system can't check against the age rule, the dates added here,
+    and the people officials added because they weren't on the church list."""
     election = Election.objects.active()
     return render(request, "voting/needs_checking.html", _needs_checking_context(election))
 
@@ -322,6 +345,10 @@ def backup_list(request):
             # Short place name for the narrow Time column: "St. Thomas More, Achimota" -> "Achimota"
             member.tick_place = member.tick.session.centre.name.split(",")[-1].strip()
         member.age = member.age_on(election.date)
+        if member.church_id is None:
+            # Added by an official on the day: no church id, so print "New" in that column.
+            # (Only changes what's printed: this page never saves anything.)
+            member.church_id = "New"
         letter = member.full_name[:1].upper()
         if not letter.isalpha():
             letter = "#"
@@ -382,7 +409,7 @@ def download_voted(request):
 
     ticks = (
         VoteCheckIn.objects.filter(election=election)
-        .select_related("member", "session__centre", "ticked_by")
+        .select_related("member__added_by", "session__centre", "ticked_by")
         .order_by("ticked_at")
     )
     rows = (
@@ -390,12 +417,16 @@ def download_voted(request):
             tick.member.church_id, tick.member.full_name, tick.member.age_on(election.date),
             tick.member.community, tick.session.centre.name, tick.session.label,
             _when(tick.ticked_at), _who(tick.ticked_by),
+            # People added on the day: the parish office may want to add them to the church list
+            "No" if tick.member.is_added_on_the_day else "Yes",
+            _who(tick.member.added_by) if tick.member.added_by else "",
         ]
         for tick in ticks
     )
     return _csv_download(
         f"who-voted-{slugify(election.name)}.csv",
-        ["Church id", "Name", "Age on election day", "Community", "Centre", "Session", "Ticked at", "Ticked by"],
+        ["Church id", "Name", "Age on election day", "Community", "Centre", "Session", "Ticked at", "Ticked by",
+         "On church list", "Added by"],
         rows,
     )
 
